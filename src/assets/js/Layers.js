@@ -12,6 +12,7 @@ export default function MapWithLayers() {
   let centerY = [0, 0.1159]; // default value for centering the map Y axes
   let path;
   let featureClass = 'SensorType'; // define a property whose value is used as class
+  let featureId = 'SensoreId';
 
   function me(selection) {
     const boundaries = selection.node().parentNode.getBoundingClientRect();
@@ -23,7 +24,7 @@ export default function MapWithLayers() {
       .translate([boundaries.width / 2, boundaries.height / 2]);
       
     // FIXME add scale
-    path = d3.geoPath().projection(projection).pointRadius(function(d) { return d.properties.Radiation ? d.properties.Radiation /4 : 1; });
+    path = d3.geoPath().projection(projection).pointRadius(function(d) { return d.properties.Radiation ? d.properties.Radiation /4 : 0; });
 
     // create a group container for map
     const paths = selection.selectAll('path')
@@ -37,7 +38,13 @@ export default function MapWithLayers() {
     selection.selectAll('path')
       .attr('class', (d) => {
         if (d.properties[featureClass]) {
-          return d.properties[featureClass];
+          return "data " + d.properties[featureClass];
+        }
+        return 'none';
+      })
+      .attr('id', (d) => {
+        if (d.properties[featureId]) {
+          return d.properties[featureId];
         }
         return 'none';
       })
@@ -73,8 +80,21 @@ export default function MapWithLayers() {
   me.featureClass = function _featureClass(_) {
     if (!arguments.length) return featureClass;
     featureClass = _;
-
     return me;
+  };
+
+
+  // getter and setter for variable center
+  me.featureId= function _featureId(_) {
+    if (!arguments.length) return featureId;
+    featureId = _;
+    return me;
+  };
+
+  //
+  // getter and setter for variable center
+  me.projection = function _path(_) {
+    if (!arguments.length) return projection
   };
 
   return me;

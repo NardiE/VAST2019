@@ -4,26 +4,32 @@
       <b-row class="mt-3">
         <b-col cols="3">
           <b-form-group label='Select a year'>
-            <!--<b-form-checkbox-group
+            <b-form-checkbox-group
               v-model="sensorType.value"
               :options="sensorType.options"
               name='sensorButton'
               buttons
-            ></b-form-checkbox-group>-->
+            ></b-form-checkbox-group>
           </b-form-group>
         </b-col>
         <b-col cols="3">
         </b-col>
       </b-row>
-      <b-row>
-        <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" increment = 5></NTimeComponent>
-      </b-row>
       <b-row class="mt-3">
-        <b-col cols="12">
-          <h3>Map</h3>
+        <b-col cols="9">
           <div style="height:500px">
-            <NMap :featureCollection="pointCollection"></NMap>
+            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection"></NMap>
           </div>
+        </b-col>
+        <b-col cols="3">
+          <b-row>
+            <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" increment = 5></NTimeComponent>
+          </b-row>
+          <b-row>
+            <NInformation v-if="isSelected"  :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.User" 
+            :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
+            :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="selectedSensorPoint.properties.Radiation"></NInformation>
+          </b-row>
         </b-col>
       </b-row>
     </b-container>
@@ -33,6 +39,7 @@
 <script>
 import NMap from '@/components/NMap.vue'
 import NTimeComponent from '@/components/NTimeComponent.vue'
+import NInformation from '@/components/NInformation.vue'
 
 // eslint-disable-next-line
 import Vue from 'vue';
@@ -48,10 +55,10 @@ let dTimeStamp
 
 var numerics = ['Latitude', 'Longitude', 'Radiation']
 /* var columns = [
-  'User',
+  'UserId',
   'Latitude',
   'Longitude',
-  'Sensor-id',
+  'SensorId',
   'SensorType',
   'Timestamp',
   'Units',
@@ -62,7 +69,8 @@ export default {
   name: 'NPartitionedPoster',
   components: {
     NMap,
-    NTimeComponent
+    NTimeComponent,
+    NInformation
   },
   data () {
     return {
@@ -82,8 +90,27 @@ export default {
       baseTimeStamp: '2020-04-06 00:00:05',
       endTimeStamp: '2020-04-10 23:59:55',
 
+      // OTHERS
+      selectedSensorPoint: {
+        properties: {
+          User: '',
+          Latitude: '',
+          Longitude: '',
+          SensorId: '',
+          SensorType: '',
+          Timestamp: '',
+          Units: '',
+          Radiation: ''
+        },
+        geometry: {
+          coordinates: ['0','0']
+        }
+      },
+      isSelected : false,
+
       // FIXME DEVELOPEMENT PURPOSES
       enableLoading: true,
+      featureNumbers: 5,
 
       pointCollection: {
         type: 'FeatureCollection',
@@ -112,12 +139,25 @@ export default {
             d[dim] = +d[dim]
           })
           d['Coords'] = [d['Longitude'], d['Latitude']]
+          d['User'] = d['UserId']
         })
 
         cf = crossfilter(data)
 
         dSensorType = cf.dimension(function (d) { return d['SensorType'] })
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
+
+        dSensorType.filter('static')
+        var count = dSensorType.groupAll().reduceCount().value()
+        var sum = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
+        console.log(sum / count)
+
+        dSensorType.filter('mobile')
+        var count1 = dSensorType.groupAll().reduceCount().value()
+        var sum1 = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
+        console.log(sum1 / count1)
+
+        dSensorType.filter(null)
 
         // this.timeStamp = dTimeStamp.bottom(1)['Timestamp']
         // this.baseTimeStamp = dTimeStamp.bottom(1)['Timestamp']
@@ -142,12 +182,13 @@ export default {
     },
 
     refreshMap (cfDimension) {
-      this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(Infinity))
+      this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
     },
 
     refreshAll (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
-        dTimeStamp.filter(filter)
+        cfDimension.filter(filter)
+        console.log(filter)
         this.refreshCounters()
         this.refreshMap(cfDimension)
       }
@@ -162,8 +203,8 @@ export default {
             ({
               type: 'Feature',
               properties: {
-                User: d.User,
-                SensorId: +d['Sensor-id'],
+                User: d.UserId,
+                SensorId: d['SensorId'],
                 SensorType: d.SensorType,
                 Timestamp: d.Timestamp,
                 Units: d.Units,
@@ -182,6 +223,13 @@ export default {
     updateTimeStamp (value) {
       this.timeStamp = value
       this.refreshAll(dTimeStamp, this.timeStamp)
+    },
+
+    updateSensorPoint (value) {
+      this.isSelected = true
+      this.selectedSensorPoint = value
+      console.log(this.selectedSensorPoint.geometry.coordinates[0])
+      //this.refreshAll(dTimeStamp, this.timeStamp)
     }
   },
 

@@ -11,10 +11,16 @@ import MapWithLayers from '@/assets/js/Layers'
 const d3 = require('d3')
 
 const map = MapWithLayers()
-  .featureClass('SensorType') // component to handle the map
+  .featureClass('SensorType')
+  .featureId('SensorId') // component to handle the map
 
 export default {
   name: 'NMap',
+  data() {
+    return {
+      mobile: []
+    }
+  },
   props: {
     featureCollection: {
       type: Object,
@@ -35,6 +41,12 @@ export default {
       })
     }
   },
+  methods: {
+    select(index, node) {
+      console.log(index)
+      console.log(node)
+    }
+  },
   mounted () {
     const gWorld = d3.select(this.$refs.world)
     const gFeatures = d3.select(this.$refs.features)
@@ -49,7 +61,14 @@ export default {
           .call(map)
       })
     gFeatures.datum(this.featureCollection)
-      .call(map)
+      .call(map).selectAll('.data')
+      .style('fill', null)
+      .on("click", (d) => {
+        this.$emit('update-sensor-point', d)
+        d3.selectAll('.data').style('fill', null)
+        d3.selectAll('#' + d.properties.SensorId).style('fill', 'black')
+        d3.event.stopPropagation()
+      })
   },
   watch: {
     featureCollection (newFC) {
@@ -61,10 +80,19 @@ export default {
         .scale(100000)
 
       const gFeatures = d3.select(this.$refs.features)
-      gFeatures.datum(newFC)
-        .call(map)
+      this.mobile = gFeatures.datum(newFC)
+      .call(map)
+      .selectAll('.data')
+      .style('fill', null)
+      .on("click", (d) => {
+        this.$emit('update-sensor-point', d)
+        d3.selectAll('.data').style('fill', null)
+        d3.selectAll('#' + d.properties.SensorId).style('fill', 'black')
+        d3.event.stopPropagation()
+      })
       const gWorld = d3.select(this.$refs.world)
-      gWorld.call(map)
+      this.mobile =  gWorld.call(map).call()
+
     }
   }
 }

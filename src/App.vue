@@ -4,17 +4,20 @@
       <a class="navbar-brand col-sm-3 col-md-2 mr-0 ml-2 bg-dark text-white" href="#">NDashboard</a>
       <font-awesome-icon class="fa-2x mr-2" icon="columns" style="color:'white'" />
     </nav>
+    <MC4Evacuation></MC4Evacuation>
     <NPartitionedPoster></NPartitionedPoster>
   </div>
 </template>
 
 <script>
 import NPartitionedPoster from '@/components/NPartitionedPoster.vue'
+import MC4Evacuation from '@/components/MC4Evacuation.vue'
 
 export default {
   name: 'App',
   components: {
-    NPartitionedPoster
+    NPartitionedPoster,
+    MC4Evacuation
   }
 }
 </script>
@@ -27,7 +30,7 @@ export default {
   background-color:#2d2d2d;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 0px;
 }
 
 .wrimagecard {

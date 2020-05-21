@@ -1,12 +1,8 @@
 <template>
-  <b-col cols="12">
-    <b-row>
+    <div>
       <NClock :timeStamp = "timeStamp"></NClock>
-    </b-row>
-    <b-row>
       <NTimeSlider @update-timestamp = "propagateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" :increment = "increment"></NTimeSlider>
-    </b-row>
-  </b-col>
+    </div>
 </template>
 
 <script>

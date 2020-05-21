@@ -1,22 +1,8 @@
 <template>
-  <b-row>
-   <div v-if="!timeStamp" id="timedate">
-      <a v-if="!timeStamp" id="d">{{ dayT }}</a> /
-      <a v-if="!timeStamp" id="d">{{ monthT }}</a> /
-      <a v-if="!timeStamp" id="mon">{{ yearT }}</a><br />
-      <a v-if="!timeStamp" id="h">{{ hourT }}</a> :
-      <a v-if="!timeStamp" id="m">{{ minuteT }}</a> :
-      <a v-if="!timeStamp" id="s">{{ secondT }}</a>
-   </div>
-   <div v-if="timeStamp" id="timedate">
-      <a v-if="timeStamp" id="d">{{ day }}</a> /
-      <a v-if="timeStamp" id="d">{{ month }}</a> /
-      <a v-if="timeStamp" id="mon">{{ year }}</a><br />
-      <a v-if="timeStamp" id="h">{{ hour }}</a> :
-      <a v-if="timeStamp" id="m">{{ minute }}</a> :
-      <a v-if="timeStamp" id="s">{{ second }}</a>
-   </div>
-  </b-row>
+<div>
+  <div id ="date">{{ date }}</div>
+  <div id ="time">{{ time }}</div>
+</div>
 </template>
 
 <script>
@@ -59,6 +45,9 @@ export default {
       var dt = new Date(this.timeStamp)
       return this.appendLeadingZeroes(dt.getDate())
     },
+    date () {
+      return this.day + '-' + this.month + '-' + this.year
+    },
     hour () {
       var dt = new Date(this.timeStamp)
       return this.appendLeadingZeroes(dt.getHours())
@@ -70,6 +59,9 @@ export default {
     second () {
       var dt = new Date(this.timeStamp)
       return this.appendLeadingZeroes(dt.getSeconds())
+    },
+    time () {
+      return this.hour + ':' + this.minute + ':' + this.second
     }
   },
   methods: {
@@ -86,11 +78,19 @@ export default {
 
 <style scoped>
 
-#timedate {
-  font: small-caps lighter 43px/150% "Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;
-  text-align:left;
-  color:#fff;
-  border-left: 3px solid #ed1f24;
-  padding: 20px;
+
+div#time {
+    width:100%;
+    border-radius:15px;
+    color:#ecf0f1;
+    text-align:center;
+    font-size:80px
+}
+div#date {
+    width:100%;
+    border-radius:15px;
+    color:#ecf0f1;
+    text-align:center;
+    font-size:20px
 }
 </style>

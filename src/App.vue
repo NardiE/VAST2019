@@ -1,11 +1,11 @@
 <template>
   <div id="app">
     <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow bg-dark text-white">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0 ml-2 bg-dark text-white" href="#">NDashboard</a>
-      <font-awesome-icon class="fa-2x mr-2" icon="columns" style="color:'white'" />
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0 ml-2 bg-dark text-white" href="#">BlackBoard</a>
+      <font-awesome-icon class="fa-x mr-2" icon="yin-yang" style="color:'white'" />
     </nav>
-    <MC4Evacuation></MC4Evacuation>
     <NPartitionedPoster></NPartitionedPoster>
+    <MC4Evacuation></MC4Evacuation>
   </div>
 </template>
 
@@ -31,6 +31,10 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 0px;
+}
+
+.text-white{
+  font-size: 30px !important;
 }
 
 .wrimagecard {

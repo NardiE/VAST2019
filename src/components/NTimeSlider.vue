@@ -1,9 +1,9 @@
 <template>
-    <b-input-group class = "row">
+    <b-input-group>
       <b-input-group-prepend>
         <b-button
           v-if="!isPlaying"
-          variant="outline-danger firstbtn"
+          class="firstbtn"
           @click="playTime()"
           aria-pressed="true"
         >
@@ -11,7 +11,7 @@
         </b-button>
         <b-button
           v-if="isPlaying"
-          variant="outline-danger firstbtn"
+          class="firstbtn"
           @click="stopTime()"
           aria-pressed="true"
         >
@@ -28,10 +28,10 @@
         aria-pressed="true"
       ></b-form-input>
       <b-input-group-append>
-        <b-button @click="decrementTimeStamp()" variant="outline-danger">
+        <b-button @click="decrementTimeStamp()" class="firstbtn">
           <font-awesome-icon class="fa-x" icon="minus" style="color:'white'" />
         </b-button>
-        <b-button @click="incrementTimeStamp()" variant="outline-danger" aria-pressed="true">
+        <b-button @click="incrementTimeStamp()" class="firstbtn" aria-pressed="">
           <font-awesome-icon class="fa-x" icon="plus" style="color:'white'" />
         </b-button>
       </b-input-group-append>
@@ -153,38 +153,37 @@ export default {
 input[type="range"]{
   -webkit-appearance: none;
   -moz-apperance: none;
-  border-top: 1px solid#ed1f24;
-  border-bottom: 1px solid#ed1f24;
-  background: #024069;
-  border-radius: 2px;
+  border-top: 0px solid white;
+  border-bottom: 0px solid white;
+  background: #2d2d2d;
+  border-radius: 0px;
   background-image: -webkit-gradient(
     linear,
     left top,
     right top,
-    color-stop(0.2, #2c3e50),
-    color-stop(0.2, #2c3e50)
+    color-stop(0.2, #2d2d2d),
+    color-stop(0.2, #2d2d2d)
   );
 }
 
 input[type="range"]::-webkit-slider-thumb{
-    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0, #ed1f24), color-stop(0.49, #ed1f24), color-stop(0.51, #ed1f24), color-stop(1, #ed1f24) );
+    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0,  white), color-stop(0.49,  white), color-stop(0.51,  white), color-stop(1, white) );
     opacity: 1;
-    border: 1px solid #2c3e50;
+    border: 0px solid #2c3e50;
 }
 
 .form-control:focus {
-  border-color: #ed1f24;
+  border-color:  white;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(255, 0, 0, 0.6);
 }
 
 input[type="range"]:focus {
-  border-color: rgba(237, 31, 36, 0.8);
+  border-color:  white;
   box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(237, 31, 36, 0.6);
   outline: 0 none;
 }
 
 .firstbtn {
-  border-left: 3px solid#ed1f24;
-  border-radius: 0;
+  margin-bottom: 0px;
 }
 </style>

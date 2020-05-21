@@ -1,32 +1,23 @@
 <template>
   <div>
     <b-container>
-      <b-row class="mt-3">
-        <b-col cols="3">
-          <b-form-group label='Select a year'>
-            <b-form-checkbox-group
-              v-model="sensorType.value"
-              :options="sensorType.options"
-              name='sensorButton'
-              buttons
-            ></b-form-checkbox-group>
-          </b-form-group>
-        </b-col>
-        <b-col cols="3">
-        </b-col>
+      <b-row class = "mt-1">
+        <b-col cols="9">
+          <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" increment = 5></NTimeComponent>
+        </b-col >
       </b-row>
-      <b-row class="mt-3">
+      <b-row class="mt-1">
         <b-col cols="9">
           <div style="height:500px">
-            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection"></NMap>
+            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId"></NMap>
           </div>
         </b-col>
         <b-col cols="3">
+        <b-row class="mt-3">
+        
+      </b-row>
           <b-row>
-            <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" increment = 5></NTimeComponent>
-          </b-row>
-          <b-row>
-            <NInformation v-if="isSelected"  :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.User" 
+            <NInformation v-if="selectedSensorPoint.properties.SensorId != ''"  :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
             :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
             :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="selectedSensorPoint.properties.Radiation"></NInformation>
           </b-row>
@@ -76,7 +67,7 @@ export default {
     return {
       // DIMENSION
       sensorType: {
-        value: 'All',
+        value: ['All'],
         options: ['All', 'Static', 'Mobile']
       },
 
@@ -93,24 +84,21 @@ export default {
       // OTHERS
       selectedSensorPoint: {
         properties: {
-          User: '',
-          Latitude: '',
-          Longitude: '',
           SensorId: '',
+          UserId: '',
           SensorType: '',
           Timestamp: '',
           Units: '',
-          Radiation: ''
+          Radiation: 0
         },
         geometry: {
-          coordinates: ['0','0']
+          coordinates: [0,0]
         }
       },
-      isSelected : false,
 
       // FIXME DEVELOPEMENT PURPOSES
       enableLoading: true,
-      featureNumbers: 5,
+      featureNumbers: Infinity,
 
       pointCollection: {
         type: 'FeatureCollection',
@@ -139,7 +127,6 @@ export default {
             d[dim] = +d[dim]
           })
           d['Coords'] = [d['Longitude'], d['Latitude']]
-          d['User'] = d['UserId']
         })
 
         cf = crossfilter(data)
@@ -147,6 +134,7 @@ export default {
         dSensorType = cf.dimension(function (d) { return d['SensorType'] })
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
+        // TODO check if this is needed
         dSensorType.filter('static')
         var count = dSensorType.groupAll().reduceCount().value()
         var sum = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
@@ -188,7 +176,6 @@ export default {
     refreshAll (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
         cfDimension.filter(filter)
-        console.log(filter)
         this.refreshCounters()
         this.refreshMap(cfDimension)
       }
@@ -203,7 +190,7 @@ export default {
             ({
               type: 'Feature',
               properties: {
-                User: d.UserId,
+                UserId: d.UserId,
                 SensorId: d['SensorId'],
                 SensorType: d.SensorType,
                 Timestamp: d.Timestamp,
@@ -226,9 +213,7 @@ export default {
     },
 
     updateSensorPoint (value) {
-      this.isSelected = true
       this.selectedSensorPoint = value
-      console.log(this.selectedSensorPoint.geometry.coordinates[0])
       //this.refreshAll(dTimeStamp, this.timeStamp)
     }
   },
@@ -240,12 +225,11 @@ export default {
       handler (newValue) {
         var filter
         // eslint-disable-next-line
-        if (newValue.value == 'All') {
+        if (newValue.value[0] == 'All' || newValue.value.length >= 2 || newValue.value.length == 0) {
           filter = null
         } else {
-          filter = newValue.value.toString().toLowerCase()
+          filter = newValue.value[0].toString().toLowerCase()
         }
-
         // TODO refreshing part
         this.refreshAll(dSensorType, filter)
       }
@@ -257,5 +241,8 @@ export default {
 </script>
 
 <style scoped>
-
+.container {
+  margin-top: 40px;
+  padding-top: 10px;
+}
 </style>

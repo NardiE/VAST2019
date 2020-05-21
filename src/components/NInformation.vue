@@ -1,11 +1,36 @@
 <template>
    <b-card-group deck>
-      <b-card :header="sensorCode" class="text-center">
-        <b-card-text>User: {{ userName }}</b-card-text>
-        <b-card-text>Coordinates: {{ coordinates }}</b-card-text>
-        <b-card-text>Sensor Type: {{ sensorType  }}</b-card-text>
-        <b-card-text>TimeStamp: {{ timeStamp }}</b-card-text>
-        <b-card-text>Radiation: {{ radiation }}</b-card-text>
+      <b-card :header="cSensorCode" class="">
+        <b-card-text>
+          <b-row class="">
+            <b-col cols="4"  class="text-left"> User: </b-col>
+            <b-col cols="8"  class="text-left"> {{ userName }} </b-col>
+          </b-row>
+        </b-card-text>
+        <b-card-text>
+          <b-row class="">
+            <b-col cols="4"  class="text-left"> Pos: </b-col>
+            <b-col cols="8"  class="text-left"> {{ cCoordinates }} </b-col>
+          </b-row>
+        </b-card-text>
+        <b-card-text>
+          <b-row class="">
+            <b-col cols="4"  class="text-left"> Type: </b-col>
+            <b-col cols="8"  class="text-left"> {{ cSensorType }} </b-col>
+          </b-row>
+        </b-card-text>
+        <b-card-text>
+          <b-row class="">
+            <b-col cols="4"  class="text-left"> Time: </b-col>
+            <b-col cols="8"  class="text-left"> {{ cTimeStamp }} </b-col>
+          </b-row>
+        </b-card-text>
+        <b-card-text>
+          <b-row class="">
+            <b-col cols="4"  class="text-left"> Value: </b-col>
+            <b-col cols="8"  class="text-left"> {{ cRadiation }} </b-col>
+          </b-row>
+        </b-card-text>
       </b-card>
     </b-card-group>
 </template>
@@ -25,10 +50,10 @@ export default {
       type: String
     },
      latitude: {
-      type: String
+      type: Number
     },
      longitude: {
-      type: String
+      type: Number
     },
      sensorType: {
       type: String
@@ -37,12 +62,27 @@ export default {
       type: String
     },
      radiation: {
-      type: String
+      type: Number
     },
   },
   computed: {
-     coordinates () {
-      return '[' + this.latitude + ', ' + this.longitude + ']'
+    cCoordinates () {
+      return '(' + this.latitude.toString().substr(0,7) + ', ' + this.longitude.toString().substr(0,7) + ')'
+    },
+    cSensorCode (){
+      return this.sensorCode.toString()
+    },
+    cUserName (){
+      return this.userName.toString()
+    },
+    cSensorType (){
+      return this.sensorType.toString()
+    },
+    cTimeStamp (){
+      return this.timeStamp.toString()
+    },
+    cRadiation (){
+      return this.radiation.toString()
     }
   },
   methods: {
@@ -53,5 +93,22 @@ export default {
 </script>
 
 <style scoped>
-
+.card-header{
+  background-color: #2d2d2d;
+  border: 2px solid white
+}
+.card-body{
+  background-color: #2d2d2d;
+  border: 2px solid white
+}
+.card-body p{
+  color: white;
+  stroke: white;
+  font-weight: bold;
+}
+.card-header div{
+  color: white;
+  stroke: white;
+  font-weight: bold;
+}
 </style>

@@ -62,11 +62,16 @@ export default {
     },
     selectedSensorCode: {
       type: String
+    },
+    neighborhoodSensorCodes: {
+      type: Array
     }
   },
   methods: {
     propagateSelectedSensor (node) {
       var tmp_node = null
+      // var  neighbors = []
+      // Node deselected
       if(node == null){
         this.fakeSensorPoint.properties.SensorId = this.selectedSensorCode
         tmp_node = this.fakeSensorPoint
@@ -74,6 +79,7 @@ export default {
       else {tmp_node = node}
       this.$emit('update-sensor-point', tmp_node)
     },
+
     drawSelectSensor() {
     var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
       this.eraseSelectSensor()
@@ -82,6 +88,7 @@ export default {
       if(selector != 'path#FAKEID' ) this.propagateSelectedSensor(d3.selectAll(selector).data()[0])
       //d3.event.stopPropagation()
     },
+
     eraseSelectSensor() {
       d3.selectAll('.data').style('fill', null)
       //d3.event.stopPropagation()
@@ -130,7 +137,7 @@ export default {
   },
   watch: {
     featureCollection (newFC, oldFC) {
-    var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
+    // var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
     //const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
     //const extentY = d3.extent(newFC.features, d => d.geometry.coordinates[1])
     // const centroidY = [0, (extentY[0] + extentY[1]) / 2]
@@ -150,20 +157,6 @@ export default {
         .call(map)
         .selectAll('.data')
         .style('fill', null)
-        .on("click", (d) => {
-          console.log('entrato3')
-          if(d.properties.SensorId == this.selectedSensorCode){
-            this.fakeSensorPoint.properties.SensorId = ''
-            this.propagateSelectedSensor(this.fakeSensorPoint)
-          }
-          else
-            this.propagateSelectedSensor(d)
-        }).selectAll(selector)
-        .on("click", () => { 
-          console.log('entrato4')   
-          this.fakeSensorPoint.properties.SensorId = ''
-          this.propagateSelectedSensor(this.fakeSensorPoint)
-        })
     }
 
       const gWorld = d3.select(this.$refs.world)

@@ -1,7 +1,22 @@
 <template>
     <div>
-      <NClock :timeStamp = "timeStamp"></NClock>
-      <NTimeSlider @update-timestamp = "propagateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" :increment = "increment"></NTimeSlider>
+      <b-row>
+        <b-col cols = "10">
+        <NClock :timeStamp = "timeStamp"></NClock>
+        </b-col>
+        <b-col>
+          <div>
+            <b-button-group vertical style ="margin-top : 10px">
+              <b-button>Top</b-button>
+              <b-button>Middle</b-button>
+              <b-button>Bottom</b-button>
+            </b-button-group>
+          </div>
+        </b-col>
+      </b-row>  
+      <b-row>
+        <NTimeSlider @update-timestamp = "propagateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" :increment = 600></NTimeSlider>
+      </b-row>
     </div>
 </template>
 
@@ -26,7 +41,7 @@ export default {
       type: String
     },
     increment: {
-      type: String
+      type: Number
     }
   },
 

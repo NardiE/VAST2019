@@ -5,19 +5,16 @@
       <font-awesome-icon class="fa-x mr-2" icon="yin-yang" style="color:'white'" />
     </nav>
     <NPartitionedPoster></NPartitionedPoster>
-    <MC4Evacuation></MC4Evacuation>
   </div>
 </template>
 
 <script>
 import NPartitionedPoster from '@/components/NPartitionedPoster.vue'
-import MC4Evacuation from '@/components/MC4Evacuation.vue'
 
 export default {
   name: 'App',
   components: {
-    NPartitionedPoster,
-    MC4Evacuation
+    NPartitionedPoster
   }
 }
 </script>
@@ -31,6 +28,16 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 0px;
+  height: 100%;
+}
+
+body {
+  background-color:#2d2d2d;
+}
+
+html {
+  background-color:#2d2d2d;
+  height: 100%;
 }
 
 .text-white{

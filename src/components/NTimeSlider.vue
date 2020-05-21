@@ -59,7 +59,7 @@ export default {
       type: String
     },
     increment: {
-      type: String
+      type: Number
     }
   },
   computed: {
@@ -74,20 +74,20 @@ export default {
     incrementTimeStamp () {
       // calcolo nuovo valore timestamp
       var dt = new Date(this.timeStamp)
-      dt.setSeconds(dt.getSeconds() + 5)
+      dt.setSeconds(dt.getSeconds() + this.increment)
       this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
     },
 
     decrementTimeStamp () {
       // calcolo nuovo valore timestamp
       var dt = new Date(this.timeStamp)
-      dt.setSeconds(dt.getSeconds() - 5)
+      dt.setSeconds(dt.getSeconds() - this.increment)
       this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
     },
 
     updateTimeStampByRange () {
       var dt = new Date(this.baseTimeStamp)
-      dt.setSeconds(dt.getSeconds() + 5 * this.internalRange)
+      dt.setSeconds(dt.getSeconds() + this.increment * this.internalRange)
       this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
     },
 

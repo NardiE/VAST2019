@@ -1,26 +1,28 @@
 <template>
   <div>
     <b-container>
-      <b-row class = "mt-1">
-        <b-col cols="9">
-          <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" :endTimeStamp = "endTimeStamp" increment = 5></NTimeComponent>
-        </b-col >
+      <b-row class="mt-3">
+        <b-col>
+          <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" 
+          :endTimeStamp = "endTimeStamp"></NTimeComponent>
+        </b-col>
       </b-row>
-      <b-row class="mt-1">
-        <b-col cols="9">
+      <b-row class="mt-3">
+        <b-col>
           <div style="height:500px">
             <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId"></NMap>
           </div>
         </b-col>
-        <b-col cols="3">
-        <b-row class="mt-3">
-        
-      </b-row>
-          <b-row>
-            <NInformation v-if="selectedSensorPoint.properties.SensorId != ''"  :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
+        <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
+          <b-row style="margin-top:60px">
+            <NInformation :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
             :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
             :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="selectedSensorPoint.properties.Radiation"></NInformation>
           </b-row>
+        </b-col>
+      </b-row><b-row class="mt-3">
+        <b-col cols = "12">
+           <NPlot v-if="selectedSensorPoint.properties.SensorId != ''"></NPlot>
         </b-col>
       </b-row>
     </b-container>
@@ -31,6 +33,7 @@
 import NMap from '@/components/NMap.vue'
 import NTimeComponent from '@/components/NTimeComponent.vue'
 import NInformation from '@/components/NInformation.vue'
+import NPlot from '@/components/NPlot.vue'
 
 // eslint-disable-next-line
 import Vue from 'vue';
@@ -61,7 +64,8 @@ export default {
   components: {
     NMap,
     NTimeComponent,
-    NInformation
+    NInformation,
+    NPlot
   },
   data () {
     return {

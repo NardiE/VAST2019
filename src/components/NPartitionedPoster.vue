@@ -2,9 +2,29 @@
   <div>
     <b-container>
       <b-row class="mt-3">
+        <b-col cols = '3'>
+            <b-row>
+              <b-button @click="settingVisible = !settingVisible"
+                aria-pressed="true"
+              >
+                <font-awesome-icon class="fa-x" icon="sliders-h" style="color:'white'" />
+              </b-button>
+            </b-row>
+            <b-row>
+              <b-button-group v-if="settingVisible">
+                <b-button @click="setIncrement(5)">1x</b-button>
+                <b-button @click="setIncrement(60)">12x</b-button>
+                <b-button @click="setIncrement(300)">60x</b-button>
+                <b-button @click="setIncrement(600)">120x</b-button>
+                <b-button @click="setIncrement(3600)">720x</b-button>
+              </b-button-group>
+            </b-row>
+          </b-col>
+      </b-row>
+      <b-row class="mt-3">
         <b-col>
           <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" 
-          :endTimeStamp = "endTimeStamp"></NTimeComponent>
+          :endTimeStamp = "endTimeStamp" :increment=increment></NTimeComponent>
         </b-col>
       </b-row>
       <b-row class="mt-3">
@@ -83,7 +103,7 @@ export default {
       // PROPERTIES
       timeStamp: '2020-04-06 00:00:05',
       baseTimeStamp: '2020-04-06 00:00:05',
-      endTimeStamp: '2020-04-10 23:59:55',
+      endTimeStamp: '2020-04-10 23:59:45',
 
       // OTHERS
       selectedSensorPoint: {
@@ -99,6 +119,10 @@ export default {
           coordinates: [0,0]
         }
       },
+
+      // SETTINGS
+      increment: 5,
+      settingVisible: false,
 
       // FIXME DEVELOPEMENT PURPOSES
       enableLoading: true,
@@ -219,6 +243,11 @@ export default {
     updateSensorPoint (value) {
       this.selectedSensorPoint = value
       //this.refreshAll(dTimeStamp, this.timeStamp)
+    },
+
+    setIncrement(value){
+      this.increment = value
+      this.settingVisible = false
     }
   },
 

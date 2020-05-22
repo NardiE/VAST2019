@@ -230,7 +230,20 @@ export default {
     },
 
     selectedSensorCode (newValue, oldValue) {
-      if(newValue!=null & newValue != oldValue){ 
+      if(newValue!=null & newValue != oldValue){
+        // per centrare mappa
+        map.scale(140000) // .centerX(centroidX).centerY(centroidY)
+        pt.scale(140000)
+
+        const gWorld = d3.select(this.$refs.world)
+        gWorld.call(map)
+
+        const gPoint = d3.select(this.$refs.points)
+        gPoint.call(pt)
+
+        const gFeatures = d3.select(this.$refs.features)
+        gFeatures.call(map)
+
         this.setUpSensors()
         this.restoreOnClick()
       }
@@ -238,6 +251,19 @@ export default {
 
     neighborhoodSensorCodes (newValue) {
       if(newValue.length > 0){
+        // per centrare mappa
+        map.scale(140000) // .centerX(centroidX).centerY(centroidY)
+        pt.scale(140000)
+
+        const gWorld = d3.select(this.$refs.world)
+        gWorld.call(map)
+
+        const gPoint = d3.select(this.$refs.points)
+        gPoint.call(pt)
+
+        const gFeatures = d3.select(this.$refs.features)
+        gFeatures.call(map)
+
         this.setUpSensors()
         this.restoreOnClick()
       }

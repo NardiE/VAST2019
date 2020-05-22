@@ -91,12 +91,6 @@ export default {
   },
   data () {
     return {
-      // DIMENSION
-      sensorType: {
-        value: ['All'],
-        options: ['All', 'Static', 'Mobile']
-      },
-
       // MEASURES
       numRecords: 0,
       sumRadiation: 0,
@@ -147,6 +141,7 @@ export default {
       enableLoading: true,
       featureNumbers: Infinity,
 
+      // COLLECTIONS
       pointCollection: {
         type: 'FeatureCollection',
         features: [
@@ -181,8 +176,8 @@ export default {
         dSensorType = cf.dimension(function (d) { return d['SensorType'] })
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
-        // TODO check if this is needed
-        dSensorType.filter('static')
+        // TODO gestire extent
+        /*dSensorType.filter('static')
         var count = dSensorType.groupAll().reduceCount().value()
         var sum = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
         console.log(sum / count)
@@ -190,15 +185,16 @@ export default {
         dSensorType.filter('mobile')
         var count1 = dSensorType.groupAll().reduceCount().value()
         var sum1 = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
-        console.log(sum1 / count1)
+        console.log(sum1 / count1) */
 
-        dSensorType.filter(null)
+        dSensorType.filter('static')
 
+        // TODO gestire extent
         // this.timeStamp = dTimeStamp.bottom(1)['Timestamp']
         // this.baseTimeStamp = dTimeStamp.bottom(1)['Timestamp']
         // this.endTimeStamp = dTimeStamp.top(1)['Timestamp']
-
         // dTimeStamp.filter(this.timeStamp)
+
         this.refreshAll(dTimeStamp, this.timeStamp)
       })
     }
@@ -210,9 +206,7 @@ export default {
     },
 
     refreshCounters () {
-      // eslint-disable-next-line
       this.numRecords = cf.groupAll().reduceCount().value(),
-      // eslint-disable-next-line
       this.sumRadiation = cf.groupAll().reduceSum(d => d.Radiation).value()
     },
 
@@ -293,26 +287,10 @@ export default {
       const[value,array] = args
       this.selectedSensorPoint = value
       this.neighborhoodSensorCodes = array
-      //this.refreshAll(dTimeStamp, this.timeStamp)
     },
   },
 
   watch: {
-    sensorType: {
-      immediate: true,
-      deep: true,
-      handler (newValue) {
-        var filter
-        // eslint-disable-next-line
-        if (newValue.value[0] == 'All' || newValue.value.length >= 2 || newValue.value.length == 0) {
-          filter = null
-        } else {
-          filter = newValue.value[0].toString().toLowerCase()
-        }
-        // TODO refreshing part
-        this.refreshAll(dSensorType, filter)
-      }
-    }
   },
   computed: {
   }

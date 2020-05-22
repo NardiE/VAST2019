@@ -67,35 +67,109 @@ export default {
       type: Array
     }
   },
-  methods: {
-    propagateSelectedSensor (node) {
-      var tmp_node = null
-      // var  neighbors = []
-      // Node deselected
-      if(node == null){
-        this.fakeSensorPoint.properties.SensorId = this.selectedSensorCode
-        tmp_node = this.fakeSensorPoint
+  methods: { 
+
+    restoreOnClick(){ 
+      d3  
+      .selectAll('.data')
+      .on("click", (d) => {
+        // SELEZIONE PER TUTTI
+
+        // se ho un padre seleziono i vicini
+        var selected = d3
+        .select('path.selected')
+
+        if(!selected.empty()) {
+          // add & mark & emit
+          this.markSensor(d.properties.SensorId, 'neighborhood');
+          this.sendBackSensors()
+        }
+        // se non ho un padre seleziono padre
+        else {
+          // push & mark & emit
+          this.markSensor(d.properties.SensorId, 'selected');
+          this.sendBackSensors()
+        }
+      })
+
+      d3
+      .selectAll('path.neighborhood')
+      .on("click", (d) => {
+      // pop & unmark & emit
+        this.unMarkSensor(d.properties.SensorId, 'neighborhood');
+        this.sendBackSensors()
+      })
+
+      d3
+      .select('path.selected')
+        .on("click", (d) => {
+          // delete & unmark & emit
+          this.deleteNeighborhoods()
+          this.unMarkSensor(d.properties.SensorId, 'selected');
+          this.sendBackSensors()
+        })
+
+    },
+
+    // markSensor
+    markSensor (idSensor, clas) {
+      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
+      // prendo classi preesistenti e aggiungo la mia
+      var myClasses = d3.selectAll(selector).attr('class')
+
+      console.log(idSensor)
+      d3.selectAll(selector).attr('class', myClasses + ' ' + clas)
+      this.restoreOnClick()
+    },
+
+    unMarkSensor (idSensor, clas) {
+      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
+
+      // prendo classi preesistenti e aggiungo la mia
+      var classes = d3.selectAll(selector).attr('class').replace(clas, '')
+
+      d3.selectAll(selector).attr('class', classes)
+      this.restoreOnClick()
+    },
+
+    deleteNeighborhoods(){
+      var neigh = d3.select('.neighborhood')
+      if(!neigh.empty()){
+        var classes = neigh.attr('class').replace('neighborhood', '')
+        d3.selectAll('.neighborhood').attr('class', classes)
       }
-      else {tmp_node = node}
-      this.$emit('update-sensor-point', tmp_node)
     },
 
-    drawSelectSensor() {
-    var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
-      this.eraseSelectSensor()
-      // FIXME change with class seleceted
-      d3.selectAll(selector).style('fill', 'red').style('fill-opacity', 0.6)
-      if(selector != 'path#FAKEID' ) this.propagateSelectedSensor(d3.selectAll(selector).data()[0])
-      //d3.event.stopPropagation()
+    sendBackSensors () {
+      // seleziono il padre se esiste, se non esiste mando il fakeSensor
+      var node = d3.select('.selected').empty() ? this.fakeSensorPoint : d3.select('.selected').data()[0]
+
+      // seleziono i vicini se esistono, array di array 
+      var neigh = []
+      
+      d3.selectAll('.neighborhood').data().forEach ( (d) => {
+        neigh.push(d.properties.SensorId)
+      })
+      console.log()
+      console.log(neigh)
+      console.log()
+      this.$emit('update-sensor-point', node, neigh)
     },
 
-    eraseSelectSensor() {
-      d3.selectAll('.data').style('fill', null)
-      //d3.event.stopPropagation()
+    setUpSensors(){
+      // sistemo il selected
+      if(this.selectedSensorCode != '')
+        this.markSensor(this.selectedSensorCode, 'selected')
+      if(this.neighborhoodSensorCodes != null)
+        this.neighborhoodSensorCodes.forEach((d) => {
+          console.log(d)
+          this.markSensor(d, 'neighborhood')
+        })
+
+      this.restoreOnClick()
     }
   },
   mounted () {
-    var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
 
     const gWorld = d3.select(this.$refs.world)
     const gFeatures = d3.select(this.$refs.features)
@@ -112,52 +186,38 @@ export default {
           .call(map)
       })
 
-    gFeatures.datum(this.featureCollection)
-      .call(map).selectAll('.data')
-      .style('fill', null)
-      .on("click", (d) => {
-        console.log('entrato1')
-        if(d.properties.SensorId == this.selectedSensorCode){
-          this.fakeSensorPoint.properties.SensorId = ''
-          console.log(this.fakeSensorPoint)
-          this.propagateSelectedSensor(this.fakeSensorPoint)
-        }
-        else
-          this.propagateSelectedSensor(d)
-        })
-      .selectAll(selector)
-      .on("click", () => {
-        console.log('entrato2')
-        this.fakeSensorPoint.properties.SensorId = ''
-        this.propagateSelectedSensor(this.fakeSensorPoint)
-      })
+    gFeatures
+      .datum(this.featureCollection)
+      .call(map)
 
-      gPoint.datum(this.featureCollection).call(pt)
+    gPoint.datum(this.featureCollection).call(pt)
+    
+    this.restoreOnClick()
 
   },
   watch: {
     featureCollection (newFC, oldFC) {
-    // var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
-    //const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
-    //const extentY = d3.extent(newFC.features, d => d.geometry.coordinates[1])
-    // const centroidY = [0, (extentY[0] + extentY[1]) / 2]
-    // const centroidX = [-((extentX[0] + extentX[1]) / 2), 0]
+      // var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
+      //const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
+      //const extentY = d3.extent(newFC.features, d => d.geometry.coordinates[1])
+      // const centroidY = [0, (extentY[0] + extentY[1]) / 2]
+      // const centroidX = [-((extentX[0] + extentX[1]) / 2), 0]
 
-    // const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
+      // const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
 
-    map // .centerX(centroidX).centerY(centroidY)
+      map // .centerX(centroidX).centerY(centroidY)
       .scale(140000)
 
-    pt
+      pt
       .scale(140000)
 
-    if(newFC !== oldFC) {
-      const gFeatures = d3.select(this.$refs.features)
-      gFeatures.datum(newFC)
+      if(newFC !== oldFC) {
+        const gFeatures = d3.select(this.$refs.features)
+        gFeatures.datum(newFC)
         .call(map)
         .selectAll('.data')
         .style('fill', null)
-    }
+      }
 
       const gWorld = d3.select(this.$refs.world)
       gWorld.call(map)
@@ -166,8 +226,11 @@ export default {
       gPoint.datum(newFC)
       .call(pt)
 
-      this.drawSelectSensor()
+      this.setUpSensors()
+      
+      this.restoreOnClick()
     },
+
     selectedSensorCode (newValue, oldValue) {
       map // .centerX(centroidX).centerY(centroidY)
         .scale(140000)
@@ -183,8 +246,10 @@ export default {
       const gFeatures = d3.select(this.$refs.features)
       gFeatures.call(map)
 
-      if(newValue!=null & newValue != oldValue) this.drawSelectSensor()
-      else this.eraseSelectSensor()
+      if(newValue!=null & newValue != oldValue){ 
+        this.setUpSensors()
+        this.restoreOnClick()
+      }
     }
   }
 }
@@ -208,6 +273,22 @@ export default {
 
   g.features path.static {
     fill: white;
+  }
+
+  g.features path.static.selected  {
+    fill: red;
+  }
+
+  g.features path.mobile.selected  {
+    fill: red;
+  }
+
+  g.features path.static.neighborhood  {
+    fill: blue;
+  }
+
+  g.features path.mobile.neighborhood  {
+    fill: blue;
   }
 
   g.points text.point {

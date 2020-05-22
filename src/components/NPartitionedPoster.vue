@@ -30,7 +30,7 @@
       <b-row class="mt-3">
         <b-col>
           <div style="height:500px">
-            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId"></NMap>
+            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes></NMap>
           </div>
         </b-col>
         <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
@@ -104,6 +104,9 @@ export default {
       timeStamp: '2020-04-06 00:00:05',
       baseTimeStamp: '2020-04-06 00:00:05',
       endTimeStamp: '2020-04-10 23:59:45',
+
+      // DATA
+      neighborhoodSensorCodes: [],
 
       // OTHERS
       selectedSensorPoint: {
@@ -240,8 +243,11 @@ export default {
       this.refreshAll(dTimeStamp, this.timeStamp)
     },
 
-    updateSensorPoint (value) {
+    updateSensorPoint (...args) {
+      console.log(args)
+      const[value,array] = args
       this.selectedSensorPoint = value
+      this.neighborhoodSensorCodes = array
       //this.refreshAll(dTimeStamp, this.timeStamp)
     },
 

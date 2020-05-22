@@ -30,7 +30,9 @@
       <b-row class="mt-3">
         <b-col>
           <div style="height:500px">
-            <NMap @update-sensor-point = "updateSensorPoint" :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes></NMap>
+            <NMap @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
+            @add-father = "addFather" @remove-father = "removeFather"
+            :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes></NMap>
           </div>
         </b-col>
         <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
@@ -120,6 +122,20 @@ export default {
         },
         geometry: {
           coordinates: [0,0]
+        }
+      },
+
+      fakeSensorPoint: {
+        properties: {
+          SensorId: '',
+          UserId: 'Not Defined',
+          SensorType: 'Not Defined',
+          Timestamp: '(Not Defined,Not Defined)',
+          Units: 'Not Defined',
+          Radiation: -100
+        },
+        geometry: {
+          coordinates: [999,999]
         }
       },
 
@@ -243,18 +259,42 @@ export default {
       this.refreshAll(dTimeStamp, this.timeStamp)
     },
 
+    setIncrement(value){
+      this.increment = value
+      this.settingVisible = false
+    },
+
+    // TO HANDLE disappearing Points
+    addNeighbor(value){
+      if(value != null) this.neighborhoodSensorCodes.push(value)
+    },
+
+    removeNeighbor(value){
+      if(value != null){
+        var idx = this.neighborhoodSensorCodes.indexOf(value)
+        if(idx > -1) this.neighborhoodSensorCodes.splice(idx,1)
+
+      }
+    },
+
+    removeNeighbors(){
+      this.neighborhoodSensorCodes = []
+    },
+
+    addFather(node){
+      this.selectedSensorPoint = node
+    },
+
+    removeFather(){
+      this.selectedSensorPoint = this.fakeSensorPoint
+    },
+
     updateSensorPoint (...args) {
-      console.log(args)
       const[value,array] = args
       this.selectedSensorPoint = value
       this.neighborhoodSensorCodes = array
       //this.refreshAll(dTimeStamp, this.timeStamp)
     },
-
-    setIncrement(value){
-      this.increment = value
-      this.settingVisible = false
-    }
   },
 
   watch: {

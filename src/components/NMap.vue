@@ -28,7 +28,7 @@ export default {
     return {
       fakeSensorPoint: {
         properties: {
-          SensorId: 'Not Defined',
+          SensorId: '',
           UserId: 'Not Defined',
           SensorType: 'Not Defined',
           Timestamp: '(Not Defined,Not Defined)',
@@ -74,39 +74,42 @@ export default {
       .selectAll('.data')
       .on("click", (d) => {
         // SELEZIONE PER TUTTI
-
         // se ho un padre seleziono i vicini
         var selected = d3
         .select('path.selected')
 
         if(!selected.empty()) {
           // add & mark & emit
-          this.markSensor(d.properties.SensorId, 'neighborhood');
-          this.sendBackSensors()
+          this.$emit('add-neighbor', d.properties.SensorId)
+          // this.markSensor(d.properties.SensorId, 'neighborhood');
+          // this.sendBackSensors()
         }
         // se non ho un padre seleziono padre
         else {
           // push & mark & emit
-          this.markSensor(d.properties.SensorId, 'selected');
-          this.sendBackSensors()
+          this.$emit('add-father', d)
+          // this.markSensor(d.properties.SensorId, 'selected');
+          // this.sendBackSensors()
         }
       })
 
       d3
       .selectAll('path.neighborhood')
       .on("click", (d) => {
-      // pop & unmark & emit
-        this.unMarkSensor(d.properties.SensorId, 'neighborhood');
-        this.sendBackSensors()
+        // pop & unmark & emit
+        this.$emit('remove-neighbor', d.properties.SensorId)
+        // this.unMarkSensor(d.properties.SensorId, 'neighborhood');
+        // this.sendBackSensors()
       })
 
       d3
       .select('path.selected')
-        .on("click", (d) => {
+        .on("click", () => {
           // delete & unmark & emit
-          this.deleteNeighborhoods()
-          this.unMarkSensor(d.properties.SensorId, 'selected');
-          this.sendBackSensors()
+          this.$emit('remove-neighbors')
+          this.$emit('remove-father')
+          // this.sendRemoveNeighbors()
+          // this.sendRemoveFather()
         })
 
     },
@@ -114,55 +117,44 @@ export default {
     // markSensor
     markSensor (idSensor, clas) {
       var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
       // prendo classi preesistenti e aggiungo la mia
-      var myClasses = d3.selectAll(selector).attr('class')
-
-      console.log(idSensor)
-      d3.selectAll(selector).attr('class', myClasses + ' ' + clas)
-      this.restoreOnClick()
+        var classes = el.attr('class') + ' ' + clas
+        el.attr('class', classes)
+        this.restoreOnClick()
+      }
     },
 
     unMarkSensor (idSensor, clas) {
       var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
-
-      // prendo classi preesistenti e aggiungo la mia
-      var classes = d3.selectAll(selector).attr('class').replace(clas, '')
-
-      d3.selectAll(selector).attr('class', classes)
-      this.restoreOnClick()
-    },
-
-    deleteNeighborhoods(){
-      var neigh = d3.select('.neighborhood')
-      if(!neigh.empty()){
-        var classes = neigh.attr('class').replace('neighborhood', '')
-        d3.selectAll('.neighborhood').attr('class', classes)
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
+        var classes = el.attr('class').replace(clas, '')
+        d3.selectAll(selector).attr('class', classes)
+        this.restoreOnClick()
       }
     },
 
-    sendBackSensors () {
-      // seleziono il padre se esiste, se non esiste mando il fakeSensor
-      var node = d3.select('.selected').empty() ? this.fakeSensorPoint : d3.select('.selected').data()[0]
-
-      // seleziono i vicini se esistono, array di array 
-      var neigh = []
-      
-      d3.selectAll('.neighborhood').data().forEach ( (d) => {
-        neigh.push(d.properties.SensorId)
-      })
-      console.log()
-      console.log(neigh)
-      console.log()
-      this.$emit('update-sensor-point', node, neigh)
+    unMarkAllSensors(clas){
+      var selector = clas == '' ? 'path#FAKEID' : 'path.' + clas
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
+        var classes = el.attr('class').replace(clas, '')
+        d3.selectAll(selector).attr('class', classes)
+        this.restoreOnClick()
+      }
     },
 
     setUpSensors(){
       // sistemo il selected
+      this.unMarkAllSensors('neighborhood')
+      this.unMarkAllSensors('selected')
+
       if(this.selectedSensorCode != '')
         this.markSensor(this.selectedSensorCode, 'selected')
-      if(this.neighborhoodSensorCodes != null)
+      if(this.neighborhoodSensorCodes.length > 0)
         this.neighborhoodSensorCodes.forEach((d) => {
-          console.log(d)
           this.markSensor(d, 'neighborhood')
         })
 
@@ -227,26 +219,25 @@ export default {
       .call(pt)
 
       this.setUpSensors()
-      
       this.restoreOnClick()
+
+      // the collection change so I need to re-emit the father
+      var selected = d3.select('path.selected')
+      if(!selected.empty()){
+        var data = selected.data()[0]
+        this.$emit('add-father', data)
+      }
     },
 
     selectedSensorCode (newValue, oldValue) {
-      map // .centerX(centroidX).centerY(centroidY)
-        .scale(140000)
-      pt
-        .scale(140000)
-
-      const gWorld = d3.select(this.$refs.world)
-      gWorld.call(map)
-
-      const gPoint = d3.select(this.$refs.points)
-      gPoint.call(pt)
-
-      const gFeatures = d3.select(this.$refs.features)
-      gFeatures.call(map)
-
       if(newValue!=null & newValue != oldValue){ 
+        this.setUpSensors()
+        this.restoreOnClick()
+      }
+    },
+
+    neighborhoodSensorCodes (newValue) {
+      if(newValue.length > 0){
         this.setUpSensors()
         this.restoreOnClick()
       }

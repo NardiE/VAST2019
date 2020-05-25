@@ -314,7 +314,7 @@ export default {
           d3.selectAll(newSelector).attr('class', classes + ' hover')
         }
       }
-      
+
       this.restoreOnClick()
     }
   }
@@ -324,13 +324,11 @@ export default {
   svg.map{
     background-color: #2d2d2d;
   }
-
   g.world path{
     fill: white;
     stroke: black;
     pointer-events: none;
   }
-
   g.features path {
     fill: black;
     stroke: black;
@@ -338,42 +336,34 @@ export default {
     fill-opacity: 0.60;
     pointer-events: all;
   }
-
   g.features path.static {
     fill: white;
     pointer-events: all;
   }
-
   g.features path.static.selected  {
     fill: red;
     pointer-events: all;
   }
-
   g.features path.mobile.selected  {
     fill: red;
     pointer-events: all;
   }
-
   g.features path.static.neighborhood  {
     fill: blue;
     pointer-events: all;
   }
-
   g.features path.mobile.neighborhood  {
     fill: blue;
     pointer-events: all;
   }
-
   g.features path.static.hover  {
     fill: green;
     pointer-events: all;
   }
-
   g.features path.mobile.hover  {
     fill: green;
     pointer-events: all;
   }
-
   g.points text.point {
     cursor: pointer; /* decoration */
     pointer-events: none; /* let thru all cursor events */
@@ -381,25 +371,20 @@ export default {
     font-size: 10px;
     stroke-width: 1px;
   }
-
   g.points text.static {
     fill: black;
     stroke: black;
     font-size: 10px;
   }
-
   g.world {
     pointer-events: none;
   }
-
   g.world path{
     pointer-events: none;
   }
-
   path.none {
     pointer-events: none;
   }
-
   g{
     pointer-events: none;
   }

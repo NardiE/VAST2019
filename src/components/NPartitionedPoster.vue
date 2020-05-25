@@ -2,6 +2,13 @@
   <div>
     <b-container>
       <b-row class="">
+        <b-col>
+          <NTimeSeries></NTimeSeries>
+        </b-col>
+      </b-row>
+    </b-container>
+    <b-container>
+      <b-row class="">
         <b-col cols = '3'>
             <b-row>
               <b-button @click="settingVisible = !settingVisible"
@@ -12,11 +19,11 @@
             </b-row>
             <b-row>
               <b-button-group v-if="settingVisible">
-                <b-button @click="setIncrement(5)">1x</b-button>
-                <b-button @click="setIncrement(60)">12x</b-button>
-                <b-button @click="setIncrement(300)">60x</b-button>
-                <b-button @click="setIncrement(600)">120x</b-button>
-                <b-button @click="setIncrement(3600)">720x</b-button>
+                <b-button @click="setIncrement(3600)">1x</b-button>
+                <b-button @click="setIncrement(7200)">2x</b-button>
+                <b-button @click="setIncrement(10800)">3x</b-button>
+                <b-button @click="setIncrement(14400)">4x</b-button>
+                <b-button @click="setIncrement(43200)">12x</b-button>
               </b-button-group>
             </b-row>
           </b-col>
@@ -70,6 +77,7 @@ import NTimeComponent from '@/components/NTimeComponent.vue'
 import NInformation from '@/components/NInformation.vue'
 import NPlot from '@/components/NPlot.vue'
 import NCounters from '@/components/NCounters.vue'
+import NTimeSeries from '@/components/NTimeSeries.vue'
 
 // eslint-disable-next-line
 import Vue from 'vue';
@@ -104,7 +112,8 @@ export default {
     NTimeComponent,
     NInformation,
     NPlot,
-    NCounters
+    NCounters,
+    NTimeSeries
   },
   data () {
     return {
@@ -114,9 +123,9 @@ export default {
       avgRadiation: 0,
 
       // PROPERTIES
-      timeStamp: '2020-04-06 00:00:05',
-      baseTimeStamp: '2020-04-06 00:00:05',
-      endTimeStamp: '2020-04-10 23:59:45',
+      timeStamp: '2020-04-06 00:00:00',
+      baseTimeStamp: '2020-04-06 00:00:00',
+      endTimeStamp: '2020-04-10 23:00:00',
 
       // DATA
       neighborhoodSensorCodes: [],
@@ -162,7 +171,7 @@ export default {
       },
 
       // SETTINGS
-      increment: 5,
+      increment: 3600,
       settingVisible: false,
 
       // FIXME DEVELOPEMENT PURPOSES
@@ -198,7 +207,9 @@ export default {
 
   mounted () {
     if (this.enableLoading) {
-      d3.csv('/data/features.csv').then(data => {
+
+      // LOAD DATA AGGREGATE 1H
+      d3.csv('/data/newFeatures.csv').then(data => {
         // coerce numbers to floats, empty strings to null
         data.forEach(function (d) {
           numerics.forEach(function (dim) {
@@ -207,10 +218,11 @@ export default {
           d['Coords'] = [d['Longitude'], d['Latitude']]
         })
 
+        // CROSS FILTER SETUP
         cf = crossfilter(data)
-
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
+        // REFRESHING COMPONENT
         this.refreshMap(dTimeStamp, this.timeStamp)
         this.refreshBarChart (dTimeStamp)
         this.refreshCounters()
@@ -219,82 +231,29 @@ export default {
   },
 
   methods: {
+    // FIXME EXTERNAL LIBRARY
     isNumber (n) {
       return !isNaN(parseFloat(n)) && isFinite(n)
     },
 
+    // REFRESHING FUNCTIONS
     refreshCounters(){
-        
       this.pointNumber = cf.groupAll().reduceCount().value();
       this.totalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value()).toFixed(2));
-      this.avgTotalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value() / cf.groupAll().reduceCount().value()).toFixed(2));
       
-      this.avgMobileRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value() / cf.groupAll().reduceCount().value()).toFixed(2));
-      
-      var staticGroup =
-      cf.groupAll().reduce(
-      function (p,v){
-        p.Radiation += v['SensorType'] == 'static' ? +v["Radiation"] : 0; 
-        p.count += v['SensorType'] == 'static' ? 1 : 0; 
-        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
-        return p;
-      },
-      // remove
-      function (p,v){
-        p.Radiation -= v['SensorType'] == 'static' ? +v["Radiation"] : 0; 
-        p.count -= v['SensorType'] == 'static' ? 1 : 0; 
-        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
-        return p;
-      },
-      // init
-      function init (){ 
-        return {
-          Radiation: 0, 
-          count: 0,
-          avg: 0
-        };
-      }
-      )
-
-      var mobileGroup =
-      cf.groupAll().reduce(
-      function (p,v){
-        p.Radiation += v['SensorType'] == 'mobile' ? +v["Radiation"] : 0; 
-        p.count += v['SensorType'] == 'mobile' ? 1 : 0; 
-        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
-        return p;
-      },
-      // remove
-      function (p,v){
-        p.Radiation -= v['SensorType'] == 'mobile' ? +v["Radiation"] : 0; 
-        p.count -= v['SensorType'] == 'mobile' ? 1 : 0; 
-        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
-        return p;
-      },
-      // init
-      function init (){ 
-        return {
-          Radiation: 0, 
-          count: 0,
-          avg: 0
-        };
-      }
-      )
-
+      // CUSTOMIZED AGGREGATION TO AVOID NEW CF DIMENSION (SAVE SPACE)
+      var staticGroup = this.customAggregation(cf, 'static')
+      var mobileGroup = this.customAggregation(cf, 'mobile')
       this.staticSensorNumber =  Number(parseFloat(staticGroup.value().count).toFixed(2))
       this.staticTotalRadiation =  Number(parseFloat(staticGroup.value().Radiation).toFixed(2))
       this.avgStaticRadiation =  Number(parseFloat(this.staticTotalRadiation/this.staticSensorNumber).toFixed(2))
-
       this.mobileSensorNumber =  Number(parseFloat(mobileGroup.value().count).toFixed(2))
       this.mobileTotalRadiation =  Number(parseFloat(mobileGroup.value().Radiation).toFixed(2))
       this.avgMobileRadiation =  Number(parseFloat(this.mobileTotalRadiation/this.mobileSensorNumber).toFixed(2))
-      
     },
-
     refreshBarChart (cfDimension) {
       this.barCollection = this.getBarChartFromReport(cfDimension.top(this.featureNumbers))
     },
-
     refreshMap (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
         cfDimension.filter(filter)
@@ -302,19 +261,14 @@ export default {
       }
     },
 
+    // COLLECTION STANDARIZATION FUNCTIONS
     getBarChartFromReport (data) {
-      const tc = {
-        x:[],
-        y:[],
-        text:[],
-        color:[]
-      }
-
+      const tc = {x:[], y:[], text:[], color:[]}
       data.forEach( (d) => {
         tc.x.push(d.SensorId)
         tc.y.push(d.Radiation)
         tc.text.push(d.Units)
-        
+        // ADDING COLOR WITH RESERVE TO SENSOR STATUS (HOVERED, FATHER, NEIGHBOR)    
         if (d.SensorId == this.hoveredMapSensorCode)
           tc.color.push('rgba(0, 255, 0, 0.6)')
         else if(d.SensorId == this.selectedSensorPoint.properties.SensorId)
@@ -324,10 +278,6 @@ export default {
         else
           tc.color.push('rgba(255,255,255,1)')
       })
-
-
-      // per ogni x se 
-
       return tc
     },
 
@@ -336,7 +286,7 @@ export default {
         type: 'FeatureCollection',
         features: reports
           .filter(d => d.Coords)
-          .map(d => // for each entry in record dictionary
+          .map(d =>
             ({
               type: 'Feature',
               properties: {
@@ -357,84 +307,99 @@ export default {
       return fc
     },
 
+    // CALLBACK FUNCTIONS (RECEIVE UPDATE FROM CHILD COMPONENTS)
+    /* TIMECOMPONENT */
     updateTimeStamp (value) {
       this.timeStamp = value
     },
-
     setIncrement(value){
       this.increment = value
       this.settingVisible = false
     },
-
-    // TO HANDLE disappearing Points
+    /* MAPCOMPONENT (HANDLE DISAPPEARING POINTS)*/
     addNeighbor(value){
       if(value != null) this.neighborhoodSensorCodes.push(value)
     },
-
     removeNeighbor(value){
       if(value != null){
         var idx = this.neighborhoodSensorCodes.indexOf(value)
         if(idx > -1) this.neighborhoodSensorCodes.splice(idx,1)
-
       }
     },
-
     removeNeighbors(){
       this.neighborhoodSensorCodes = []
     },
-
     addFather(node){
       this.selectedSensorPoint = node
     },
-
     removeFather(){
       this.selectedSensorPoint = this.fakeSensorPoint
-      // qui non metto il refresh della TImeSeries risparmio tempo tanto non si vede
     },
-
     updateSensorPoint (...args) {
       const[value,array] = args
       this.selectedSensorPoint = value
       this.neighborhoodSensorCodes = array
     },
-
-    hoverSensor (newVal) {
-      this.hoveredSensorCode = newVal[0]
-    },
-
     hoverSensorMap (newVal) {
       this.hoveredMapSensorCode = newVal
     },
-
+    /* PLOTCOMPONENT (BARCHART)*/
+    hoverSensor (newVal) {
+      this.hoveredSensorCode = newVal[0]
+    },
     clickSensor(snsCode){
       if(snsCode){
         var sensCode = snsCode[0]
-        // deseleziono padre
+        // IF I REMOVE FATHER, I NEED TO REMOVE NEIGHBORS TOO
         if(this.selectedSensorPoint.properties.SensorId == sensCode){
             this.selectedSensorPoint.properties.SensorId = ''
             this.neighborhoodSensorCodes = []
         }
-        // se non ho un padre aggiungo padre
+        // IF I HAVE NOT A FATHER, NEW SENSOR MAY BE A FATHER
         else if(this.selectedSensorPoint.properties.SensorId == ''){
           this.selectedSensorPoint.properties.SensorId = sensCode
         }
-        // se è un neigh lo tolgo
+        // IF THE SELECTED BAR SENSOR IS A NEIGHBORS I REMOVE IT
         else if(this.neighborhoodSensorCodes.includes(sensCode)){
           var index = this.neighborhoodSensorCodes.indexOf(sensCode);
           if (index !== -1) this.neighborhoodSensorCodes.splice(index, 1);
         }
+        // ELSE I ADD IT AS A NEIGHBORS
         else{
           this.neighborhoodSensorCodes.push(sensCode)
         }
-
-        this.refreshMap(dTimeStamp, this.timeStamp)
-        this.refreshBarChart(dTimeStamp)
       }
-    }
+    },
 
+    // OTHER FUNCTIONS
+    customAggregation (cf, filter) {
+      return cf.groupAll().reduce( 
+      // Add
+      function (p,v){
+        p.Radiation += v['SensorType'] == filter ? +v["Radiation"] : 0; 
+        p.count += v['SensorType'] == filter ? 1 : 0; 
+        p.avg = v['SensorType'] == filter ? (p.Radiation / p.count) : 0;
+        return p;
+      },// remove
+      function (p,v){
+        p.Radiation -= v['SensorType'] == filter ? +v["Radiation"] : 0; 
+        p.count -= v['SensorType'] == filter ? 1 : 0; 
+        p.avg = v['SensorType'] == filter ? (p.Radiation / p.count) : 0;
+        return p;
+      },
+      // Initialize
+      function init (){ 
+        return {
+          Radiation: 0, 
+          count: 0,
+          avg: 0
+        };
+      })
+    }
   },
 
   watch: {
+    // ALL WATCHED FUNCTION, EVERY LOGICS INSERTED HERE TO NOT MAKE HEAVY ONCLICK COMPONENT ACTIONS
     selectedSensorPoint () {
       this.refreshBarChart (dTimeStamp)
     },

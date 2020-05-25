@@ -73,7 +73,6 @@ export default {
   methods: {
     playTimeStamp () {
       // calcolo nuovo valore timestamp
-      console.log("play")
       var diff = this.timeDifference(this.endTimeStamp, this.timeStamp)
       if (diff > 0 && this.isPlaying) {
         this.incrementTimeStamp()
@@ -89,7 +88,6 @@ export default {
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() + this.increment)
       var diff = this.timeDifference(this.endTimeStamp, dt)
-      console.log(diff)
       if (diff > 0){
         this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))  
       }
@@ -103,7 +101,6 @@ export default {
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() - this.increment)
       var diff = this.timeDifference(this.timeStamp, this.baseTimeStamp)
-      console.log(diff)
       // calcolo nuovo valore timestamp
       if (diff > 0){
         this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
@@ -131,7 +128,6 @@ export default {
     },
 
     startTimer () {
-      console.log("timer")
       this.intervalT = setInterval(() => {
           this.playTimeStamp()
       }, 250)
@@ -146,7 +142,6 @@ export default {
     },
 
     timeDifference (endTime, startTime) {
-      console.log("entrato")
       var endT = new Date(endTime)
       var baseT = new Date(startTime)
       return ((endT - baseT) / 1000 / this.increment)
@@ -157,7 +152,6 @@ export default {
       immediate: true,
       deep: true,
       handler (newValue, oldValue) {
-        console.log(oldValue + ' - ' + newValue)
         if (newValue !== oldValue) {
           this.internalRange = newValue
         }

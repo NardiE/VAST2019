@@ -1,5 +1,5 @@
 <template>
-  <svg height="500" width="100%" class="map">
+  <svg height="380" width="100%" class="map">
     <g class="world" ref="world"></g>
     <g class="features" ref="features"></g>
     <g class="points" ref="points"></g>
@@ -13,12 +13,12 @@ import Point from '@/assets/js/Point'
 const d3 = require('d3')
 
 const map = MapWithLayers()
-  .scale(140000)
+  .scale(110000)
   .featureClass('SensorType')
-  .featureId('SensorId') // component to handle the map
+  .featureId('SensorId')
 
 const pt = Point()
-.scale(140000)
+.scale(110000)
 .featureId('SensorId')
 .featureClass('SensorType')
 
@@ -50,7 +50,8 @@ export default {
           {
             type: 'Feature',
             properties: {
-              SensorType: 'mobile'
+              SensorType: 'mobile',
+              Radiation: 1            
             },
             geometry: {
               type: 'Point',
@@ -65,11 +66,16 @@ export default {
     },
     neighborhoodSensorCodes: {
       type: Array
+    },
+    hoveredSensorCode: {
+      type: String
     }
   },
   methods: { 
 
     restoreOnClick(){ 
+      let self = this
+
       d3  
       .selectAll('.data')
       .on("click", (d) => {
@@ -81,25 +87,46 @@ export default {
         if(!selected.empty()) {
           // add & mark & emit
           this.$emit('add-neighbor', d.properties.SensorId)
-          // this.markSensor(d.properties.SensorId, 'neighborhood');
-          // this.sendBackSensors()
         }
         // se non ho un padre seleziono padre
         else {
           // push & mark & emit
           this.$emit('add-father', d)
-          // this.markSensor(d.properties.SensorId, 'selected');
-          // this.sendBackSensors()
         }
       })
+      .on("mouseenter", function (d){
+        d3.select(this).style('fill', 'green')
+        self.$emit('hover-sensor', d.properties.SensorId)
+        console.log(d)
+        d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
+        d3.event.stopPropagation()
+        d3.event.preventDefault()
+      })
+      .on("mouseleave", function (){
+        
+        d3.select(this).style('fill', null)
+        self.$emit('hover-sensor', '')        
+        d3.event.stopPropagation();
+        d3.event.preventDefault()
+      })
+      .attr('pointer-events', 'all')
 
       d3
       .selectAll('path.neighborhood')
       .on("click", (d) => {
         // pop & unmark & emit
         this.$emit('remove-neighbor', d.properties.SensorId)
-        // this.unMarkSensor(d.properties.SensorId, 'neighborhood');
-        // this.sendBackSensors()
+      })
+      .on("mouseenter", function (d){
+        self.$emit('hover-sensor', d.properties.SensorId)
+        d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
+        d3.event.stopPropagation();
+        d3.event.preventDefault()
+      })
+      .on("mouseleave", function (){
+        self.$emit('hover-sensor', '')        
+        d3.event.stopPropagation();
+        d3.event.preventDefault()
       })
 
       d3
@@ -108,10 +135,19 @@ export default {
           // delete & unmark & emit
           this.$emit('remove-neighbors')
           this.$emit('remove-father')
-          // this.sendRemoveNeighbors()
-          // this.sendRemoveFather()
         })
-
+      .on("mouseenter", function (d){
+        self.$emit('hover-sensor', d.properties.SensorId)
+        d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
+        d3.event.stopPropagation();
+        d3.event.preventDefault()
+      })
+      .on("mouseleave", function (){
+        self.$emit('hover-sensor', '')        
+        d3.event.stopPropagation();
+        d3.event.preventDefault()
+      })
+      
     },
 
     // markSensor
@@ -169,10 +205,9 @@ export default {
 
     d3.json('data/StHimark.json')
       .then((world) => {
-        // removing Antartide since there is a problem with the contour geometry
         const fWorld = {
           ...world,
-          features: world.features // .filter(d => d.properties.CNTR_ID !== 'AQ')
+          features: world.features 
         }
         gWorld.datum(fWorld)
           .call(map)
@@ -182,26 +217,21 @@ export default {
       .datum(this.featureCollection)
       .call(map)
 
-    gPoint.datum(this.featureCollection).call(pt)
+    gPoint
+      .datum(this.featureCollection)
+      .call(pt)
     
     this.restoreOnClick()
 
   },
   watch: {
     featureCollection (newFC, oldFC) {
-      // var selector = this.selectedSensorCode == '' ? 'path#FAKEID' : 'path#' + this.selectedSensorCode
-      //const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
-      //const extentY = d3.extent(newFC.features, d => d.geometry.coordinates[1])
-      // const centroidY = [0, (extentY[0] + extentY[1]) / 2]
-      // const centroidX = [-((extentX[0] + extentX[1]) / 2), 0]
 
-      // const extentX = d3.extent(newFC.features, d => d.geometry.coordinates[0])
-
-      map // .centerX(centroidX).centerY(centroidY)
-      .scale(140000)
+      map
+      .scale(110000)
 
       pt
-      .scale(140000)
+      .scale(110000)
 
       if(newFC !== oldFC) {
         const gFeatures = d3.select(this.$refs.features)
@@ -209,6 +239,10 @@ export default {
         .call(map)
         .selectAll('.data')
         .style('fill', null)
+
+        const gPoint = d3.select(this.$refs.points)
+        gPoint.datum(newFC)
+        .call(pt)
       }
 
       const gWorld = d3.select(this.$refs.world)
@@ -232,8 +266,8 @@ export default {
     selectedSensorCode (newValue, oldValue) {
       if(newValue!=null & newValue != oldValue){
         // per centrare mappa
-        map.scale(140000) // .centerX(centroidX).centerY(centroidY)
-        pt.scale(140000)
+        map.scale(110000) // .centerX(centroidX).centerY(centroidY)
+        pt.scale(110000)
 
         const gWorld = d3.select(this.$refs.world)
         gWorld.call(map)
@@ -249,11 +283,11 @@ export default {
       }
     },
 
-    neighborhoodSensorCodes (newValue) {
-      if(newValue.length > 0){
+    neighborhoodSensorCodes () {
+      //if(newValue.length > 0){
         // per centrare mappa
-        map.scale(140000) // .centerX(centroidX).centerY(centroidY)
-        pt.scale(140000)
+        map.scale(110000) // .centerX(centroidX).centerY(centroidY)
+        pt.scale(110000)
 
         const gWorld = d3.select(this.$refs.world)
         gWorld.call(map)
@@ -266,7 +300,31 @@ export default {
 
         this.setUpSensors()
         this.restoreOnClick()
+      // }
+    },
+    hoveredSensorCode (newValue, oldValue){
+      // rimuovo dal vechhio ed aggiungo al nuovo
+      var oldSelector = 'path#' + oldValue
+      var newSelector = 'path#' + newValue
+      var classes = ''
+      var selected
+
+      if(oldValue != null & oldValue != '') {
+        selected = d3.selectAll(oldSelector)
+        if(selected != null){
+          classes = selected.attr('class')
+          d3.selectAll(oldSelector).attr('class', classes.replace('hover', ''))
+        }
       }
+      
+      if(newValue != null & newValue != '') {
+        selected = d3.selectAll(newSelector)
+        if(selected != null){
+          classes = selected.attr('class')
+          d3.selectAll(newSelector).attr('class', classes + ' hover')
+        }
+      }
+      this.restoreOnClick()
     }
   }
 }
@@ -279,6 +337,7 @@ export default {
   g.world path{
     fill: white;
     stroke: black;
+    pointer-events: none;
   }
 
   g.features path {
@@ -286,26 +345,42 @@ export default {
     stroke: black;
     stroke-width: 2px;
     fill-opacity: 0.60;
+    pointer-events: all;
   }
 
   g.features path.static {
     fill: white;
+    pointer-events: all;
   }
 
   g.features path.static.selected  {
     fill: red;
+    pointer-events: all;
   }
 
   g.features path.mobile.selected  {
     fill: red;
+    pointer-events: all;
   }
 
   g.features path.static.neighborhood  {
     fill: blue;
+    pointer-events: all;
   }
 
   g.features path.mobile.neighborhood  {
     fill: blue;
+    pointer-events: all;
+  }
+
+  g.features path.static.hover  {
+    fill: green;
+    pointer-events: all;
+  }
+
+  g.features path.mobile.hover  {
+    fill: green;
+    pointer-events: all;
   }
 
   g.points text.point {
@@ -320,5 +395,21 @@ export default {
     fill: black;
     stroke: black;
     font-size: 10px;
+  }
+
+  g.world {
+    pointer-events: none;
+  }
+
+  g.world path{
+    pointer-events: none;
+  }
+
+  path.none {
+    pointer-events: none;
+  }
+
+  g{
+    pointer-events: none;
   }
 </style>

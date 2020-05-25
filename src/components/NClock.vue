@@ -84,13 +84,13 @@ div#time {
     border-radius:15px;
     color:#ecf0f1;
     text-align:center;
-    font-size:80px
+    font-size:35px
 }
 div#date {
     width:100%;
     border-radius:15px;
     color:#ecf0f1;
     text-align:center;
-    font-size:20px
+    font-size:18px
 }
 </style>

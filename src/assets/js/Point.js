@@ -12,7 +12,7 @@ export default function MapWithLayers() {
   let centerY = [0, 0.1159]; // default value for centering the map Y axes
   let path;
   let featureClass = 'SensorType'; // define a property whose value is used as class
-  let featureId = 'SensoreId';
+  let featureId = 'SensorId';
 
   function me(selection) {
     const boundaries = selection.node().parentNode.getBoundingClientRect();
@@ -49,10 +49,12 @@ export default function MapWithLayers() {
          return 'none';
        })
       .attr("text-anchor", "middle")
-      .text( (d) => {return d.properties[featureId][0]})
+      .text( (d) => {
+        if(d.properties[featureId]) return d.properties[featureId][0]
+        else return 'X'})
       .attr("x", (d) => {return path.centroid(d)[0]})
       .attr("y", (d) => {return path.centroid(d)[1] + 3})
-      .attr("text", (d) => {return d.properties[featureId].substring(1, 1)})
+      // .attr("text", (d) => {return d.properties[featureId].substring(1, 1)})
   }
 
 

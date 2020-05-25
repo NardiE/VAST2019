@@ -14,7 +14,7 @@ export default function MapWithLayers() {
   let minRadiation = -20;
   let maxRadiation = 2419;
   let featureClass = 'SensorType'; // define a property whose value is used as class
-  let featureId = 'SensoreId';
+  let featureId = 'SensorId';
 
   function me(selection) {
     const boundaries = selection.node().parentNode.getBoundingClientRect();
@@ -41,7 +41,9 @@ export default function MapWithLayers() {
     paths.exit().remove();
 
     paths.enter()
-      .append('path');
+      .append('path')
+      .append("svg:title")
+      .attr('class', 'tooltip');
 
     selection.selectAll('path')
       .attr('class', (d) => {
@@ -61,8 +63,7 @@ export default function MapWithLayers() {
       .sort(function (a, b) { // select the parent and sort the path's
         if (+a.properties.Radiation >= +b.properties.Radiation) return -1;               // a is not the hovered element, send "a" to the back
         else return 1;                             // a is the hovered element, bring "a" to the front
-  })
-      ;
+      });
   }
 
 

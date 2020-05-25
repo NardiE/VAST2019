@@ -1,7 +1,7 @@
 <template>
   <div>
     <b-container>
-      <b-row class="mt-3">
+      <b-row class="">
         <b-col cols = '3'>
             <b-row>
               <b-button @click="settingVisible = !settingVisible"
@@ -21,30 +21,43 @@
             </b-row>
           </b-col>
       </b-row>
-      <b-row class="mt-3">
+      <b-row class="">
         <b-col>
           <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" 
           :endTimeStamp = "endTimeStamp" :increment=increment></NTimeComponent>
         </b-col>
       </b-row>
-      <b-row class="mt-3">
+      <b-row class="">
         <b-col>
-          <div style="height:500px">
-            <NMap @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
+          <div style="height: 380px">
+            <NMap @hover-sensor="hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
             @add-father = "addFather" @remove-father = "removeFather"
-            :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes></NMap>
+            :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes
+            :hoveredSensorCode="hoveredSensorCode"
+            ></NMap>
           </div>
         </b-col>
-        <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
-          <b-row style="margin-top:60px">
-            <NInformation :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
-            :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
-            :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="selectedSensorPoint.properties.Radiation"></NInformation>
+        <b-col cols="5" v-if="selectedSensorPoint.properties.SensorId == ''">
+          <b-row  class="ml-0" style="margin-top:10px">
+            <NCounters :pointNumber=pointNumber :totalRadiation=totalRadiation :avgTotalRadiation=avgTotalRadiation :avgStaticRadiation=avgStaticRadiation
+            :avgMobileRadiation=avgMobileRadiation :mobileSensorNumber=mobileSensorNumber :staticSensorNumber=staticSensorNumber :mobileTotalRadiation=mobileTotalRadiation
+            :staticTotalRadiation=staticTotalRadiation
+            ></NCounters>
           </b-row>
         </b-col>
-      </b-row><b-row class="mt-3">
-        <b-col cols = "12">
-           <NPlot v-if="selectedSensorPoint.properties.SensorId != ''"></NPlot>
+        <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
+          <b-row style="margin-top:10px">
+            <NInformation :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
+            :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
+            :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="Number(Number(selectedSensorPoint.properties.Radiation).toFixed(2))"></NInformation>
+          </b-row>
+        </b-col>
+      </b-row>
+      <b-row  class="mt-3">
+        <b-col class cols = "12">
+          <div style="height:100px">
+           <NPlot @click-sensor="clickSensor" @hover-sensor="hoverSensor" :cfAggregation="barCollection"></NPlot>
+          </div>
         </b-col>
       </b-row>
     </b-container>
@@ -56,6 +69,7 @@ import NMap from '@/components/NMap.vue'
 import NTimeComponent from '@/components/NTimeComponent.vue'
 import NInformation from '@/components/NInformation.vue'
 import NPlot from '@/components/NPlot.vue'
+import NCounters from '@/components/NCounters.vue'
 
 // eslint-disable-next-line
 import Vue from 'vue';
@@ -66,8 +80,10 @@ import * as d3 from 'd3'
 let cf // crossfilter instance
 
 // eslint-disable-next-line
-let dSensorType // dimension for SensorType
 let dTimeStamp
+
+// let cf2 // crossfilter instance
+
 
 var numerics = ['Latitude', 'Longitude', 'Radiation']
 /* var columns = [
@@ -87,7 +103,8 @@ export default {
     NMap,
     NTimeComponent,
     NInformation,
-    NPlot
+    NPlot,
+    NCounters
   },
   data () {
     return {
@@ -103,6 +120,17 @@ export default {
 
       // DATA
       neighborhoodSensorCodes: [],
+      hoveredSensorCode: '',
+      hoveredMapSensorCode: '',
+      pointNumber: 0,
+      totalRadiation: 0,
+      avgTotalRadiation: 0,
+      avgStaticRadiation: 0,
+      avgMobileRadiation: 0,
+      staticSensorNumber: 0,
+      mobileSensorNumber: 0,
+      mobileTotalRadiation: 0,
+      staticTotalRadiation: 0,
 
       // OTHERS
       selectedSensorPoint: {
@@ -148,7 +176,8 @@ export default {
           {
             type: 'Feature',
             properties: {
-              SensorType: 'Default point'
+              SensorType: 'Default point',
+              Radiation: 0
             },
             geometry: {
               type: 'Point',
@@ -156,6 +185,13 @@ export default {
             }
           }
         ]
+      },
+
+      barCollection: {
+        x: [0],
+        y: [0],
+        text: [''],
+        color:['rgba(255,255,255,1)']
       }
     }
   },
@@ -173,29 +209,11 @@ export default {
 
         cf = crossfilter(data)
 
-        dSensorType = cf.dimension(function (d) { return d['SensorType'] })
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
-        // TODO gestire extent
-        /*dSensorType.filter('static')
-        var count = dSensorType.groupAll().reduceCount().value()
-        var sum = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
-        console.log(sum / count)
-
-        dSensorType.filter('mobile')
-        var count1 = dSensorType.groupAll().reduceCount().value()
-        var sum1 = dSensorType.groupAll().reduceSum(d=>d.Radiation).value()
-        console.log(sum1 / count1) */
-
-        dSensorType.filter('static')
-
-        // TODO gestire extent
-        // this.timeStamp = dTimeStamp.bottom(1)['Timestamp']
-        // this.baseTimeStamp = dTimeStamp.bottom(1)['Timestamp']
-        // this.endTimeStamp = dTimeStamp.top(1)['Timestamp']
-        // dTimeStamp.filter(this.timeStamp)
-
-        this.refreshAll(dTimeStamp, this.timeStamp)
+        this.refreshMap(dTimeStamp, this.timeStamp)
+        this.refreshBarChart (dTimeStamp)
+        this.refreshCounters()
       })
     }
   },
@@ -205,21 +223,112 @@ export default {
       return !isNaN(parseFloat(n)) && isFinite(n)
     },
 
-    refreshCounters () {
-      this.numRecords = cf.groupAll().reduceCount().value(),
-      this.sumRadiation = cf.groupAll().reduceSum(d => d.Radiation).value()
+    refreshCounters(){
+        
+      this.pointNumber = cf.groupAll().reduceCount().value();
+      this.totalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value()).toFixed(2));
+      this.avgTotalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value() / cf.groupAll().reduceCount().value()).toFixed(2));
+      
+      this.avgMobileRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value() / cf.groupAll().reduceCount().value()).toFixed(2));
+      
+      var staticGroup =
+      cf.groupAll().reduce(
+      function (p,v){
+        p.Radiation += v['SensorType'] == 'static' ? +v["Radiation"] : 0; 
+        p.count += v['SensorType'] == 'static' ? 1 : 0; 
+        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
+        return p;
+      },
+      // remove
+      function (p,v){
+        p.Radiation -= v['SensorType'] == 'static' ? +v["Radiation"] : 0; 
+        p.count -= v['SensorType'] == 'static' ? 1 : 0; 
+        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
+        return p;
+      },
+      // init
+      function init (){ 
+        return {
+          Radiation: 0, 
+          count: 0,
+          avg: 0
+        };
+      }
+      )
+
+      var mobileGroup =
+      cf.groupAll().reduce(
+      function (p,v){
+        p.Radiation += v['SensorType'] == 'mobile' ? +v["Radiation"] : 0; 
+        p.count += v['SensorType'] == 'mobile' ? 1 : 0; 
+        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
+        return p;
+      },
+      // remove
+      function (p,v){
+        p.Radiation -= v['SensorType'] == 'mobile' ? +v["Radiation"] : 0; 
+        p.count -= v['SensorType'] == 'mobile' ? 1 : 0; 
+        p.avg = v['SensorType'] == 'mobile' ? (p.Radiation / p.count) : 0;
+        return p;
+      },
+      // init
+      function init (){ 
+        return {
+          Radiation: 0, 
+          count: 0,
+          avg: 0
+        };
+      }
+      )
+
+      this.staticSensorNumber =  Number(parseFloat(staticGroup.value().count).toFixed(2))
+      this.staticTotalRadiation =  Number(parseFloat(staticGroup.value().Radiation).toFixed(2))
+      this.avgStaticRadiation =  Number(parseFloat(this.staticTotalRadiation/this.staticSensorNumber).toFixed(2))
+
+      this.mobileSensorNumber =  Number(parseFloat(mobileGroup.value().count).toFixed(2))
+      this.mobileTotalRadiation =  Number(parseFloat(mobileGroup.value().Radiation).toFixed(2))
+      this.avgMobileRadiation =  Number(parseFloat(this.mobileTotalRadiation/this.mobileSensorNumber).toFixed(2))
+      
     },
 
-    refreshMap (cfDimension) {
-      this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
+    refreshBarChart (cfDimension) {
+      this.barCollection = this.getBarChartFromReport(cfDimension.top(this.featureNumbers))
     },
 
-    refreshAll (cfDimension, filter) {
+    refreshMap (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
         cfDimension.filter(filter)
-        this.refreshCounters()
-        this.refreshMap(cfDimension)
+        this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
       }
+    },
+
+    getBarChartFromReport (data) {
+      const tc = {
+        x:[],
+        y:[],
+        text:[],
+        color:[]
+      }
+
+      data.forEach( (d) => {
+        tc.x.push(d.SensorId)
+        tc.y.push(d.Radiation)
+        tc.text.push(d.Units)
+        
+        if (d.SensorId == this.hoveredMapSensorCode)
+          tc.color.push('rgba(0, 255, 0, 0.6)')
+        else if(d.SensorId == this.selectedSensorPoint.properties.SensorId)
+          tc.color.push('rgba(255, 0, 0, 0.6)')
+        else if(this.neighborhoodSensorCodes.includes(d.SensorId))
+          tc.color.push('rgba(0, 0, 255, 0.6)')
+        else
+          tc.color.push('rgba(255,255,255,1)')
+      })
+
+
+      // per ogni x se 
+
+      return tc
     },
 
     getGeoJsonFromReports (reports) {
@@ -250,7 +359,6 @@ export default {
 
     updateTimeStamp (value) {
       this.timeStamp = value
-      this.refreshAll(dTimeStamp, this.timeStamp)
     },
 
     setIncrement(value){
@@ -281,6 +389,7 @@ export default {
 
     removeFather(){
       this.selectedSensorPoint = this.fakeSensorPoint
+      // qui non metto il refresh della TImeSeries risparmio tempo tanto non si vede
     },
 
     updateSensorPoint (...args) {
@@ -288,9 +397,58 @@ export default {
       this.selectedSensorPoint = value
       this.neighborhoodSensorCodes = array
     },
+
+    hoverSensor (newVal) {
+      this.hoveredSensorCode = newVal[0]
+    },
+
+    hoverSensorMap (newVal) {
+      this.hoveredMapSensorCode = newVal
+    },
+
+    clickSensor(snsCode){
+      if(snsCode){
+        var sensCode = snsCode[0]
+        // deseleziono padre
+        if(this.selectedSensorPoint.properties.SensorId == sensCode){
+            this.selectedSensorPoint.properties.SensorId = ''
+            this.neighborhoodSensorCodes = []
+        }
+        // se non ho un padre aggiungo padre
+        else if(this.selectedSensorPoint.properties.SensorId == ''){
+          this.selectedSensorPoint.properties.SensorId = sensCode
+        }
+        // se è un neigh lo tolgo
+        else if(this.neighborhoodSensorCodes.includes(sensCode)){
+          var index = this.neighborhoodSensorCodes.indexOf(sensCode);
+          if (index !== -1) this.neighborhoodSensorCodes.splice(index, 1);
+        }
+        else{
+          this.neighborhoodSensorCodes.push(sensCode)
+        }
+
+        this.refreshMap(dTimeStamp, this.timeStamp)
+        this.refreshBarChart(dTimeStamp)
+      }
+    }
+
   },
 
   watch: {
+    selectedSensorPoint () {
+      this.refreshBarChart (dTimeStamp)
+    },
+    neighborhoodSensorCodes (){
+      this.refreshBarChart (dTimeStamp)
+    },
+    timeStamp (){
+      this.refreshMap(dTimeStamp, this.timeStamp)
+      this.refreshBarChart (dTimeStamp)
+      this.refreshCounters()
+    },
+    hoveredMapSensorCode (){
+      this.refreshBarChart (dTimeStamp)
+    }
   },
   computed: {
   }
@@ -301,5 +459,6 @@ export default {
 .container {
   margin-top: 40px;
   padding-top: 10px;
+  margin-bottom:20px;
 }
 </style>

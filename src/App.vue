@@ -41,7 +41,7 @@ html {
 }
 
 .text-white{
-  font-size: 30px !important;
+  font-size: 20px !important;
 }
 
 .wrimagecard {

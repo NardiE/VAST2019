@@ -6,6 +6,7 @@
 </template>
 
 <script>
+// THIS COMPONENT SIMPLY PRINT A TIME PASSED AS PROPS
 export default {
   name: 'NClock',
   props: {

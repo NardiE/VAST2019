@@ -12,6 +12,7 @@
 </template>
 
 <script>
+// THIS COMPONENT IS PRINCIPALLY AN HANDLER FOR NCLOCK AND NTIMESLIDER
 import NClock from '@/components/NClock.vue'
 import NTimeSlider from '@/components/NTimeSlider.vue'
 

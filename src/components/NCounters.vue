@@ -60,6 +60,7 @@
 </template>
 
 <script>
+// SIMPLE COMPONENT CART TO STORE INFORMATION
 export default {
   name: 'NCounters',
   data () {

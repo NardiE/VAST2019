@@ -39,6 +39,7 @@
 </template>
 
 <script>
+// TO THIS COMPONENT IS DELEGATE ALL THE TIME INTERACTION
 export default {
   name: 'NTimeSlider',
   data () {
@@ -71,6 +72,7 @@ export default {
     }
   },
   methods: {
+    // TIMER FUNCTION
     playTimeStamp () {
       // calcolo nuovo valore timestamp
       var diff = this.timeDifference(this.endTimeStamp, this.timeStamp)
@@ -82,8 +84,6 @@ export default {
         clearInterval(this.intervalT)
       }
     },
-
-    
     incrementTimeStamp () {
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() + this.increment)
@@ -96,7 +96,6 @@ export default {
         this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))  
       }
     },
-
     decrementTimeStamp () {
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() - this.increment)
@@ -110,23 +109,22 @@ export default {
         this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))  
       }
     },
-
+    // THIS FUNCTION UPDATE TIMESTAMP USING RANGE SLIDER
     updateTimeStampByRange () {
       var dt = new Date(this.baseTimeStamp)
       dt.setSeconds(dt.getSeconds() + this.increment * this.internalRange)
       this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
     },
 
+    // EVENT FUNCTION
     playTime () {
       this.isPlaying = true
       this.startTimer()
     },
-
     stopTime () {
       this.isPlaying = false
       clearInterval(this.intervalT)
     },
-
     startTimer () {
       this.intervalT = setInterval(() => {
           this.playTimeStamp()
@@ -140,7 +138,6 @@ export default {
       }
       return n
     },
-
     timeDifference (endTime, startTime) {
       var endT = new Date(endTime)
       var baseT = new Date(startTime)

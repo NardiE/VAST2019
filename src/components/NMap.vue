@@ -12,11 +12,13 @@ import Point from '@/assets/js/Point'
 
 const d3 = require('d3')
 
+// MAP + FEATURE LAYER
 const map = MapWithLayers()
   .scale(110000)
   .featureClass('SensorType')
   .featureId('SensorId')
 
+// TEXT LAYER
 const pt = Point()
 .scale(110000)
 .featureId('SensorId')
@@ -72,25 +74,69 @@ export default {
     }
   },
   methods: { 
+    // USED IN THE SETUP TO DRAW COMPONENTS (USED TO HANDLE DISEAPPEARING POINTS)
+    markSensor (idSensor, clas) {
+      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
+      // prendo classi preesistenti e aggiungo la mia
+        var classes = el.attr('class') + ' ' + clas
+        el.attr('class', classes)
+        this.restoreOnClick()
+      }
+    },
+    // USED IN THE SETUP TO DRAW COMPONENTS (USED TO HANDLE DISEAPPEARING POINTS)
+    unMarkSensor (idSensor, clas) {
+      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
+        var classes = el.attr('class').replace(clas, '')
+        d3.selectAll(selector).attr('class', classes)
+        this.restoreOnClick()
+      }
+    },
+    // USED IN THE SETUP TO DRAW COMPONENTS (USED TO HANDLE DISEAPPEARING POINTS)
+    unMarkAllSensors(clas){
+      var selector = clas == '' ? 'path#FAKEID' : 'path.' + clas
+      var el = d3.selectAll(selector)
+      if (!el.empty()){
+        var classes = el.attr('class').replace(clas, '')
+        d3.selectAll(selector).attr('class', classes)
+        this.restoreOnClick()
+      }
+    },
 
+    // SETTING UP SENSORS ON MAP
+    setUpSensors(){
+      this.unMarkAllSensors('neighborhood')
+      this.unMarkAllSensors('selected')
+
+      if(this.selectedSensorCode != '')
+        this.markSensor(this.selectedSensorCode, 'selected')
+      if(this.neighborhoodSensorCodes.length > 0)
+        this.neighborhoodSensorCodes.forEach((d) => {
+          this.markSensor(d, 'neighborhood')
+        })
+
+      this.restoreOnClick()
+    },
+
+    // THIS IS THE RESPONSABLE TO RESTORE ON CLICK WHEN SOMETHING CHANGE
     restoreOnClick(){ 
+      // USE TO HANDLE THE FACT THAT STOP PROPAGATION AND PREVENT DEFAULT NOT WORK WITH ARROW FUNCTION (NOT SO BEAUTIFUL SAVE CONTEXT)
       let self = this
-
+      // EVENTS FOR ALL DATA
       d3  
       .selectAll('.data')
       .on("click", (d) => {
-        // SELEZIONE PER TUTTI
-        // se ho un padre seleziono i vicini
         var selected = d3
         .select('path.selected')
-
         if(!selected.empty()) {
-          // add & mark & emit
+        // IF I HAVE A FATHER I SELECT A NEIGHBOR (USING FATHER COMPONENT CALLBACK (PARTITIONEDPOSTER))
           this.$emit('add-neighbor', d.properties.SensorId)
         }
-        // se non ho un padre seleziono padre
         else {
-          // push & mark & emit
+        // IF I HAVEN'T A FATHER I SELECT IT 
           this.$emit('add-father', d)
         }
       })
@@ -103,21 +149,22 @@ export default {
         d3.event.preventDefault()
       })
       .on("mouseleave", function (){
-        
         d3.select(this).style('fill', null)
         self.$emit('hover-sensor', '')        
         d3.event.stopPropagation();
         d3.event.preventDefault()
       })
       .attr('pointer-events', 'all')
-
+      
+      // EVENT FOR NEIGHBORS
       d3
       .selectAll('path.neighborhood')
       .on("click", (d) => {
-        // pop & unmark & emit
+        // REMOVE NEIGHBOR
         this.$emit('remove-neighbor', d.properties.SensorId)
       })
       .on("mouseenter", function (d){
+        // I DON'T CHANGE COLOR IF IS A FATHER OR A NEIGHBOR
         self.$emit('hover-sensor', d.properties.SensorId)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
         d3.event.stopPropagation();
@@ -137,6 +184,7 @@ export default {
           this.$emit('remove-father')
         })
       .on("mouseenter", function (d){
+        // I DON'T CHANGE COLOR IF IS A FATHER OR A NEIGHBOR
         self.$emit('hover-sensor', d.properties.SensorId)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
         d3.event.stopPropagation();
@@ -148,53 +196,6 @@ export default {
         d3.event.preventDefault()
       })
       
-    },
-
-    // markSensor
-    markSensor (idSensor, clas) {
-      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
-      var el = d3.selectAll(selector)
-      if (!el.empty()){
-      // prendo classi preesistenti e aggiungo la mia
-        var classes = el.attr('class') + ' ' + clas
-        el.attr('class', classes)
-        this.restoreOnClick()
-      }
-    },
-
-    unMarkSensor (idSensor, clas) {
-      var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
-      var el = d3.selectAll(selector)
-      if (!el.empty()){
-        var classes = el.attr('class').replace(clas, '')
-        d3.selectAll(selector).attr('class', classes)
-        this.restoreOnClick()
-      }
-    },
-
-    unMarkAllSensors(clas){
-      var selector = clas == '' ? 'path#FAKEID' : 'path.' + clas
-      var el = d3.selectAll(selector)
-      if (!el.empty()){
-        var classes = el.attr('class').replace(clas, '')
-        d3.selectAll(selector).attr('class', classes)
-        this.restoreOnClick()
-      }
-    },
-
-    setUpSensors(){
-      // sistemo il selected
-      this.unMarkAllSensors('neighborhood')
-      this.unMarkAllSensors('selected')
-
-      if(this.selectedSensorCode != '')
-        this.markSensor(this.selectedSensorCode, 'selected')
-      if(this.neighborhoodSensorCodes.length > 0)
-        this.neighborhoodSensorCodes.forEach((d) => {
-          this.markSensor(d, 'neighborhood')
-        })
-
-      this.restoreOnClick()
     }
   },
   mounted () {
@@ -226,12 +227,9 @@ export default {
   },
   watch: {
     featureCollection (newFC, oldFC) {
-
-      map
-      .scale(110000)
-
-      pt
-      .scale(110000)
+      // FIXED SCALE ON HOUR PURPOSES, NO NEED TO ADD A DYNAMIC ONE
+      map.scale(110000)
+      pt.scale(110000)
 
       if(newFC !== oldFC) {
         const gFeatures = d3.select(this.$refs.features)
@@ -239,7 +237,6 @@ export default {
         .call(map)
         .selectAll('.data')
         .style('fill', null)
-
         const gPoint = d3.select(this.$refs.points)
         gPoint.datum(newFC)
         .call(pt)
@@ -265,16 +262,14 @@ export default {
 
     selectedSensorCode (newValue, oldValue) {
       if(newValue!=null & newValue != oldValue){
-        // per centrare mappa
-        map.scale(110000) // .centerX(centroidX).centerY(centroidY)
+        // NO NEED TO CENTER MAP ACCORDING TO THE FEATURES
+        map.scale(110000)
         pt.scale(110000)
 
         const gWorld = d3.select(this.$refs.world)
         gWorld.call(map)
-
         const gPoint = d3.select(this.$refs.points)
         gPoint.call(pt)
-
         const gFeatures = d3.select(this.$refs.features)
         gFeatures.call(map)
 
@@ -284,26 +279,21 @@ export default {
     },
 
     neighborhoodSensorCodes () {
-      //if(newValue.length > 0){
-        // per centrare mappa
-        map.scale(110000) // .centerX(centroidX).centerY(centroidY)
+        map.scale(110000)
         pt.scale(110000)
 
         const gWorld = d3.select(this.$refs.world)
         gWorld.call(map)
-
         const gPoint = d3.select(this.$refs.points)
         gPoint.call(pt)
-
         const gFeatures = d3.select(this.$refs.features)
         gFeatures.call(map)
 
         this.setUpSensors()
         this.restoreOnClick()
-      // }
     },
     hoveredSensorCode (newValue, oldValue){
-      // rimuovo dal vechhio ed aggiungo al nuovo
+      // ADDED TO INTERACTION BETWEEN BAR AND MAP
       var oldSelector = 'path#' + oldValue
       var newSelector = 'path#' + newValue
       var classes = ''
@@ -324,6 +314,7 @@ export default {
           d3.selectAll(newSelector).attr('class', classes + ' hover')
         }
       }
+      
       this.restoreOnClick()
     }
   }

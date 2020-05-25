@@ -20,7 +20,8 @@ export default {
          x: ['M1', 'S2', 'M3', 'M4', 'S5', 'M6'],
          y: [2, 4, 1, 8, 6, 7],
          name: '',
-         text: ['M1', 'S2', 'M3', 'M4', 'S5', 'M6'],
+         // TEXT USED TO STORE MEASUREMENT UNITS
+         text: ['cpm', 'cpm', 'cpm', 'cpm', 'cpm', 'cpm'],
          hovertemplate: '<br><b>Sensor</b>: %{x}<br>' +
                         '<i>Radiation</i>: %{y:.2f} %{text}',
          marker: {
@@ -35,7 +36,6 @@ export default {
             color:  '#2d2d2d',
             width: 0
          }
-         // orientation: 'h',
       }],
       layout: {
          color: 'white',
@@ -47,9 +47,6 @@ export default {
             r: 9,
             pad: 1,
          },
-         /*yaxis: {
-            type: 'category',
-         }, */
          xaxis: {
             linecolor: '#2d2d2d',
             gridcolor: '#2d2d2d',
@@ -82,28 +79,26 @@ export default {
   },
   watch: {
     cfAggregation(newVal) {
-
+      // SORT X BASED ON Y VALUES
       var tmpIdx = newVal.y.map(function(e,i){return {ind: i, val: e}});
-      // sort index/value couples, based on values
       tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
-      // make list keeping only indices
       var idx = tmpIdx.map(function(e){return e.ind});
-
       var ordX = []
       idx.forEach(function (value, i) {
         ordX[i] = newVal.x[value]
       });
+      // USINF CATEGORICYORDER TO DO THIS
+      this.layout.xaxis.categoryorder = 'array'
+      this.layout.xaxis.categoryarray = ordX
+
       this.data[0].x = newVal.x;
       this.data[0].y = newVal.y;
       this.data[0].text = newVal.text;
       this.data[0].marker.color = newVal.color;
-
-
-      this.layout.xaxis.categoryorder = 'array'
-      this.layout.xaxis.categoryarray = ordX
     },
   },
   methods: {
+    // EVENT CALLS CALLBACK TO PARENT (PARTITIONEDPOSTER)
     hover(data) {
       var infotext = data.points.map(function(d){
         return (d.x);
@@ -117,7 +112,6 @@ export default {
       var infotext = data.points.map(function(d){
         return (d.x);
       })
-      console.log(infotext)
       this.$emit('click-sensor', infotext)
     }
   },

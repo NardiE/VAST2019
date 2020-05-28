@@ -44,6 +44,10 @@ export default {
   name: 'NTimeSlider',
   data () {
     return {
+      // DEVELOPMENT
+      verbose: true,
+
+      // PROPERTIES
       isPlaying: false,
       intervalT: null,
       internalRange: 0
@@ -74,6 +78,7 @@ export default {
   methods: {
     // TIMER FUNCTION
     playTimeStamp () {
+      if(this.verbose) console.log('TS QUI')
       // calcolo nuovo valore timestamp
       var diff = this.timeDifference(this.endTimeStamp, this.timeStamp)
       if (diff > 0 && this.isPlaying) {
@@ -85,6 +90,7 @@ export default {
       }
     },
     incrementTimeStamp () {
+      if(this.verbose) console.log('TS QUI')
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() + this.increment)
       var diff = this.timeDifference(this.endTimeStamp, dt)
@@ -97,6 +103,7 @@ export default {
       }
     },
     decrementTimeStamp () {
+      if(this.verbose) console.log('TS QUI')
       var dt = new Date(this.timeStamp)
       dt.setSeconds(dt.getSeconds() - this.increment)
       var diff = this.timeDifference(this.timeStamp, this.baseTimeStamp)
@@ -114,7 +121,11 @@ export default {
       var dt = new Date(this.baseTimeStamp)
       dt.setSeconds(dt.getSeconds() + this.increment * this.internalRange)
       this.$emit('update-timestamp', dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
-    },
+    
+      if(this.verbose) console.log('OLD: '+ this.timeStamp)
+      if(this.verbose) console.log('NEW: ' + dt.getFullYear() + '-' + this.appendLeadingZeroes(dt.getMonth() + 1) + '-' + this.appendLeadingZeroes(dt.getDate()) + ' ' + this.appendLeadingZeroes(dt.getHours()) + ':' + this.appendLeadingZeroes(dt.getMinutes()) + ':' + this.appendLeadingZeroes(dt.getSeconds()))
+      if(this.verbose) console.log('TS QUI')
+      },
 
     // EVENT FUNCTION
     playTime () {
@@ -150,6 +161,7 @@ export default {
       deep: true,
       handler (newValue, oldValue) {
         if (newValue !== oldValue) {
+          if(this.verbose) console.log('INT:' + newValue)
           this.internalRange = newValue
         }
       }

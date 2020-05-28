@@ -1,12 +1,12 @@
 <template>
-  <vue-plotly @click="click" @hover="hover" @unhover="unhover" style="overflow:auto;" :data="data" :layout="layout" :options="options"/>
+  <vue-plotly @click="click" style="overflow:auto;" :data="data" :layout="layout" :options="options"/>
 </template>
 
 <script>
 import VuePlotly from '@statnett/vue-plotly';
 
 export default {
-  name: 'NPlot',
+  name: 'NTimeSeries',
   components: {
     VuePlotly,
   },
@@ -16,24 +16,13 @@ export default {
   data() {
     return {
       data: [{
-         type: 'scatter',
-         x: ['01-01-2020', '02-01-2020', '03-01-2020', '04-01-2020', '05-01-2020', '06-01-2020'],
-         y: [1, 8, 7, 100, 9, 22],
-         text: ['M_1', 'M_1', 'M_1', 'M_1', 'M_1', 'M_1'],
-         hovertemplate: '<br><b>Time</b>: %{x}<br>' +
-                        '<b>Sensor</b>: %{text}<br>' +
-                        '<br><i>Radiation</i>: %{y:.2f} cpm',
-      },
-      {
-         type: 'scatter',
-         x: ['01-01-2020', '02-01-2020', '03-01-2020', '04-01-2020', '05-01-2020', '06-01-2020'],
-         y: [2, 4, 1, 8, 6, 7],
       }
       ],
       layout: {
+        height: 800,
+        autosize: true,
         showlegend: false,
         color: 'white',
-        height: 250,
         hovermode:'closest',
         margin: {
           t: 6,
@@ -49,7 +38,7 @@ export default {
           showgrid: false,
           showline: false,
           showticklabels: false,
-          //showmarker: false
+          showmarker: true
         },
         yaxis: {
             linecolor: '#2d2d2d',
@@ -66,39 +55,79 @@ export default {
         displayModeBar: false,
         showSendToCloud:true,
         
-        scrollZoom: false
+        scrollZoom: false,
+        
+        // responsive: true
+        //
       },
+      config: {
+      }
     };
   },
   watch: {
     cfAggregation(newVal) {
+      var i = 0
+      var myData = [{}]
+      for (var val in newVal)
+      {
+        myData[i] = {
+          x:[], 
+          y:[], 
+          text:[], 
+          type: 'scatter',
+          hovertemplate: '<br><b>Time</b>: %{x}<br>' +
+                          '<b>Sensor</b>: %{text}<br>' +
+                          '<br><i>Radiation</i>: %{y:.2f} cpm',
+          name: '',
+          
+          mode: 'lines+markers',
+          marker: {
+            color:  'white',
+            symbol: 'circle-dot',
+            line: {
+              color: '#2d2d2d',
+              width: 1
+            },
+            size: 9
+          },
+          line: {
+            color:  'white',
+            width: 1
+         }
+        }
+        var tmpIdx = newVal[val].y.map(function(e,i){return {ind: i, val: e}});
+        // sort index/value couples, based on values
+        tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
+        // make list keeping only indices
+        var idx = tmpIdx.map(function(e){return e.ind});
 
-      var tmpIdx = newVal.y.map(function(e,i){return {ind: i, val: e}});
-      // sort index/value couples, based on values
-      tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
-      // make list keeping only indices
-      var idx = tmpIdx.map(function(e){return e.ind});
+        var ordX = []
+        idx.forEach(function (value, i) {
+          ordX[i] = newVal[val].x[value]
+        });
 
-      var ordX = []
-      idx.forEach(function (value, i) {
-        ordX[i] = newVal.x[value]
-      });
-      this.data[0].x = newVal.x;
-      this.data[0].y = newVal.y;
-      this.data[0].text = newVal.text;
-      // this.data[0].marker.color = newVal.color;
+        myData[i].x = newVal[val].x;
+        myData[i].y = newVal[val].y;
+        myData[i].text = newVal[val].text;
+        myData[i].node = newVal[val].node
+        myData[i].marker.symbol = newVal[val].symbol
 
+        i += 1
+      }
 
-      // this.layout.xaxis.categoryorder = 'array'
-      // this.layout.xaxis.categoryarray = ordX
+      // Updating directly internal data does not trigger redraw
+      this.data = myData
     },
   },
   methods: {
-    hover() {
-    },
-    unhover() {
-    },
-    click(){
+    click(data){
+      var timestamp = data.points.map(function(d){
+        return (d.x + ':00');
+      })
+      var sensor = data.points.map(function(d){
+        return (d.data.node);
+      })
+      this.$emit('click-inside',timestamp, sensor)
     }
   },
 };

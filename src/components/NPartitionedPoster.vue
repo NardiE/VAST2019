@@ -1,29 +1,34 @@
 <template>
   <div>
-    <b-container>
-      <b-row class="">
-        <b-col>
-          <NTimeSeries></NTimeSeries>
+    <b-container fluid class="mt-3" v-show="mode=='timeseries'">
+      <b-row  class="mt-3">
+        <b-col class cols = "12">
+          <div style="height:700px" >
+            <div>
+                <NTimeSeries :cfAggregation="tsCollection" @click-inside = "switchToMap"></NTimeSeries>
+            </div>>
+          </div>
         </b-col>
       </b-row>
     </b-container>
-    <b-container>
+    <b-container v-if="mode=='map'">
       <b-row class="">
         <b-col cols = '3'>
             <b-row>
-              <b-button @click="settingVisible = !settingVisible"
-                aria-pressed="true"
-              >
+              <b-button @click="settingVisible = !settingVisible" aria-pressed="true">
                 <font-awesome-icon class="fa-x" icon="sliders-h" style="color:'white'" />
+              </b-button>
+              <b-button @click="switchToTimeSeries()" aria-pressed="true">
+                <font-awesome-icon class="fa-x" icon="chart-line" style="color:'white'" />
               </b-button>
             </b-row>
             <b-row>
               <b-button-group v-if="settingVisible">
-                <b-button @click="setIncrement(3600)">1x</b-button>
-                <b-button @click="setIncrement(7200)">2x</b-button>
-                <b-button @click="setIncrement(10800)">3x</b-button>
-                <b-button @click="setIncrement(14400)">4x</b-button>
-                <b-button @click="setIncrement(43200)">12x</b-button>
+                <b-button @click="setIncrement(baseIncrement)">1x</b-button>
+                <b-button @click="setIncrement(2*baseIncrement)">2x</b-button>
+                <b-button @click="setIncrement(3*baseIncrement)">3x</b-button>
+                <b-button @click="setIncrement(4*baseIncrement)">4x</b-button>
+                <b-button @click="setIncrement(12*baseIncrement)">12x</b-button>
               </b-button-group>
             </b-row>
           </b-col>
@@ -36,7 +41,7 @@
       </b-row>
       <b-row class="">
         <b-col>
-          <div style="height: 380px">
+          <div style="height: 450px">
             <NMap @hover-sensor="hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
             @add-father = "addFather" @remove-father = "removeFather"
             :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes
@@ -63,7 +68,7 @@
       <b-row  class="mt-3">
         <b-col class cols = "12">
           <div style="height:100px">
-           <NPlot @click-sensor="clickSensor" @hover-sensor="hoverSensor" :cfAggregation="barCollection"></NPlot>
+           <NPlot :cfAggregation="barCollection" @click-sensor="clickSensor" @hover-sensor="hoverSensor"></NPlot>
           </div>
         </b-col>
       </b-row>
@@ -94,6 +99,8 @@ let dTimeStamp
 
 
 var numerics = ['Latitude', 'Longitude', 'Radiation']
+
+var modes = ['timeseries', 'map'];
 /* var columns = [
   'UserId',
   'Latitude',
@@ -117,15 +124,23 @@ export default {
   },
   data () {
     return {
+
+      // SETTINGS
+      increment: 3600,
+      settingVisible: false,
+
       // MEASURES
       numRecords: 0,
       sumRadiation: 0,
       avgRadiation: 0,
 
       // PROPERTIES
+      baseIncrement: 3600,
       timeStamp: '2020-04-06 00:00:00',
       baseTimeStamp: '2020-04-06 00:00:00',
       endTimeStamp: '2020-04-10 23:00:00',
+      /* USED TO SWITCH FROM TIMESERIES VISUALITATION TO MAP VISUALIZATION AND VICEVERSA */
+      mode : null,
 
       // DATA
       neighborhoodSensorCodes: [],
@@ -170,13 +185,10 @@ export default {
         }
       },
 
-      // SETTINGS
-      increment: 3600,
-      settingVisible: false,
-
       // FIXME DEVELOPEMENT PURPOSES
       enableLoading: true,
       featureNumbers: Infinity,
+      verbose: true,
 
       // COLLECTIONS
       pointCollection: {
@@ -201,17 +213,29 @@ export default {
         y: [0],
         text: [''],
         color:['rgba(255,255,255,1)']
-      }
+      },
+
+      tsCollection:{
+        S_1:
+        [ {
+        x: [0],
+        y: [0],
+        text: [''],
+        color :'#2d2d2d'
+      }]}
     }
   },
 
   mounted () {
     if (this.enableLoading) {
+      
+      if(this.verbose) console.log('NPP: Aggiungo modalità visualizzazione una volta finito il caricamento')
+        this.mode = modes[0]
 
       // LOAD DATA AGGREGATE 1H
       d3.csv('/data/newFeatures.csv').then(data => {
         // coerce numbers to floats, empty strings to null
-        data.forEach(function (d) {
+        data.forEach((d) => {
           numerics.forEach(function (dim) {
             d[dim] = +d[dim]
           })
@@ -223,9 +247,12 @@ export default {
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
         // REFRESHING COMPONENT
-        this.refreshMap(dTimeStamp, this.timeStamp)
+        if(this.verbose) console.log('NPP: AGGIORNO QUI')
+        // TODO this.refreshMap(dTimeStamp, this.timeStamp)
+        this.refreshMap(dTimeStamp, null)
         this.refreshBarChart (dTimeStamp)
         this.refreshCounters()
+        this.refreshTimeSeries(dTimeStamp)
       })
     }
   },
@@ -240,10 +267,10 @@ export default {
     refreshCounters(){
       this.pointNumber = cf.groupAll().reduceCount().value();
       this.totalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value()).toFixed(2));
-      
+      this.avgTotalRadiation = Number((this.totalRadiation/this.pointNumber).toFixed(2))
       // CUSTOMIZED AGGREGATION TO AVOID NEW CF DIMENSION (SAVE SPACE)
-      var staticGroup = this.customAggregation(cf, 'static')
-      var mobileGroup = this.customAggregation(cf, 'mobile')
+      var staticGroup = this.customAggregation('static')
+      var mobileGroup = this.customAggregation('mobile')
       this.staticSensorNumber =  Number(parseFloat(staticGroup.value().count).toFixed(2))
       this.staticTotalRadiation =  Number(parseFloat(staticGroup.value().Radiation).toFixed(2))
       this.avgStaticRadiation =  Number(parseFloat(this.staticTotalRadiation/this.staticSensorNumber).toFixed(2))
@@ -252,16 +279,42 @@ export default {
       this.avgMobileRadiation =  Number(parseFloat(this.mobileTotalRadiation/this.mobileSensorNumber).toFixed(2))
     },
     refreshBarChart (cfDimension) {
+      if(this.verbose) console.log('NPP: entrato REFRESH-BC')
       this.barCollection = this.getBarChartFromReport(cfDimension.top(this.featureNumbers))
     },
     refreshMap (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
+        if(this.verbose) console.log('NPP: entrato REFRESH-MAP (filter) ' + filter)
         cfDimension.filter(filter)
         this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
       }
     },
+    refreshTimeSeries(cfDimension){
+      cfDimension.filter(null)
+      if(this.verbose) console.log('NPP: entrato REFRESH-TS')
+      this.tsCollection = this.getTsFromReport(cfDimension.top(this.featureNumbers))
+      console.log(this.tsCollection)
+    },
 
     // COLLECTION STANDARIZATION FUNCTIONS
+    getTsFromReport (data) {
+      var ts = {}
+      data.forEach( (d) => {
+        if(d.SensorId.trim() != ''){
+          // IF SENSOR NOT EXISTS
+          if(!ts[d.SensorId]){
+            ts[d.SensorId] = {x:[], y:[], text:[], color:'#2d2d2d', node : {}}
+          }
+          if(d.SensorType == 'static') ts[d.SensorId].symbol = 'square-cross'
+          else if(d.SensorType == 'mobile') ts[d.SensorId].symbol = 'circle-cross'
+          ts[d.SensorId].x.push(d.Timestamp)
+          ts[d.SensorId].y.push(d.Radiation)
+          ts[d.SensorId].text.push(d.SensorId)
+          ts[d.SensorId].node = d
+        }
+      })
+      return ts
+    },
     getBarChartFromReport (data) {
       const tc = {x:[], y:[], text:[], color:[]}
       data.forEach( (d) => {
@@ -310,9 +363,11 @@ export default {
     // CALLBACK FUNCTIONS (RECEIVE UPDATE FROM CHILD COMPONENTS)
     /* TIMECOMPONENT */
     updateTimeStamp (value) {
+      if(this.verbose) console.log('NPP: ENTRATO UTS')
       this.timeStamp = value
     },
     setIncrement(value){
+      if(this.verbose) console.log('NPP: ENTRATO "SET INCREMENT" from TIME COMPONENT')
       this.increment = value
       this.settingVisible = false
     },
@@ -345,9 +400,11 @@ export default {
     },
     /* PLOTCOMPONENT (BARCHART)*/
     hoverSensor (newVal) {
+      if(this.verbose) console.log('NPP: entrato HS -' + newVal[0])
       this.hoveredSensorCode = newVal[0]
     },
     clickSensor(snsCode){
+      if(this.verbose) console.log('NPP: entrato CS -' + snsCode)
       if(snsCode){
         var sensCode = snsCode[0]
         // IF I REMOVE FATHER, I NEED TO REMOVE NEIGHBORS TOO
@@ -371,8 +428,36 @@ export default {
       }
     },
 
+    // VISUALIZATION MODES
+    switchToTimeSeries () {
+      dTimeStamp.filter(null)
+      this.mode = modes[0]
+    },
+    switchToMap (...args) {
+      const[timeStamp,sensor] = args
+      if(sensor){
+        if(this.verbose) console.log('NPP: entrato STM (sensorId) ' + sensor[0])
+        var tmpSensorPoint = this.selectedSensorPoint
+        this.selectedSensorPoint = this.fakeSensorPoint
+        
+        tmpSensorPoint.properties.SensorId = sensor[0].SensorId
+        tmpSensorPoint.properties.UserId = sensor[0].UserId
+        tmpSensorPoint.properties.SensorType = sensor[0].SensorType
+        tmpSensorPoint.properties.Timestamp = sensor[0].Timestamp
+        tmpSensorPoint.properties.Units = sensor[0].Units
+        tmpSensorPoint.properties.Radiation = sensor[0].Radiation
+
+        this.selectedSensorPoint = tmpSensorPoint
+      }
+      if(timeStamp){
+        if(this.verbose) console.log('NPP: entrato STM (timestamp) ' + timeStamp[0])
+        this.timeStamp = timeStamp[0]
+        this.mode = modes[1]
+      }
+    },
+
     // OTHER FUNCTIONS
-    customAggregation (cf, filter) {
+    customAggregation (filter) {
       return cf.groupAll().reduce( 
       // Add
       function (p,v){
@@ -401,18 +486,27 @@ export default {
   watch: {
     // ALL WATCHED FUNCTION, EVERY LOGICS INSERTED HERE TO NOT MAKE HEAVY ONCLICK COMPONENT ACTIONS
     selectedSensorPoint () {
+      if(this.verbose) 
+        console.log('NPP: entrato WATCH SSP')
       this.refreshBarChart (dTimeStamp)
+      this.refreshCounters()
     },
     neighborhoodSensorCodes (){
+      if(this.verbose) console.log('NPP: entrato WATCH NSC')
       this.refreshBarChart (dTimeStamp)
+      this.refreshCounters()
     },
-    timeStamp (){
+    timeStamp () {
+      if(this.verbose) console.log('NPP: entrato WATCH TS')
       this.refreshMap(dTimeStamp, this.timeStamp)
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
     },
     hoveredMapSensorCode (){
+      if(this.verbose) 
+        console.log('NPP: entrato WATCH HMSC')
       this.refreshBarChart (dTimeStamp)
+      this.refreshCounters()
     }
   },
   computed: {
@@ -424,6 +518,13 @@ export default {
 .container {
   margin-top: 40px;
   padding-top: 10px;
+  margin-bottom:20px;
+}
+
+
+.container-fluid {
+  margin-top: 50px;
+  padding-top: 40px;
   margin-bottom:20px;
 }
 </style>

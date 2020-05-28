@@ -28,6 +28,9 @@ export default {
   name: 'NMap',
   data() {
     return {
+      // DEVELOPEMENT
+      verbose: false,
+
       fakeSensorPoint: {
         properties: {
           SensorId: '',
@@ -143,7 +146,7 @@ export default {
       .on("mouseenter", function (d){
         d3.select(this).style('fill', 'green')
         self.$emit('hover-sensor', d.properties.SensorId)
-        console.log(d)
+        if(this.verbose) console.log(d)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
         d3.event.stopPropagation()
         d3.event.preventDefault()
@@ -199,6 +202,8 @@ export default {
     }
   },
   mounted () {
+    if(this.verbose) console.log('NMAP: entrato MOUNTED (FC) ')
+    if(this.verbose) console.log(this.featureCollection)
 
     const gWorld = d3.select(this.$refs.world)
     const gFeatures = d3.select(this.$refs.features)
@@ -222,45 +227,44 @@ export default {
       .datum(this.featureCollection)
       .call(pt)
     
-    this.restoreOnClick()
+    this.setUpSensors()
 
   },
   watch: {
     featureCollection (newFC, oldFC) {
+    if(this.verbose) console.log('NMAP: entrato WATCH-FC')
       // FIXED SCALE ON HOUR PURPOSES, NO NEED TO ADD A DYNAMIC ONE
       map.scale(110000)
       pt.scale(110000)
 
       if(newFC !== oldFC) {
+
         const gFeatures = d3.select(this.$refs.features)
         gFeatures.datum(newFC)
         .call(map)
         .selectAll('.data')
         .style('fill', null)
+        
         const gPoint = d3.select(this.$refs.points)
         gPoint.datum(newFC)
         .call(pt)
-      }
 
-      const gWorld = d3.select(this.$refs.world)
-      gWorld.call(map)
+        const gWorld = d3.select(this.$refs.world)
+        gWorld.call(map)
 
-      const gPoint = d3.select(this.$refs.points)
-      gPoint.datum(newFC)
-      .call(pt)
+        this.setUpSensors()
 
-      this.setUpSensors()
-      this.restoreOnClick()
-
-      // the collection change so I need to re-emit the father
-      var selected = d3.select('path.selected')
-      if(!selected.empty()){
-        var data = selected.data()[0]
-        this.$emit('add-father', data)
+        // the collection change so I need to re-emit the father
+        var selected = d3.select('path.selected')
+        if(!selected.empty()){
+          var data = selected.data()[0]
+          this.$emit('add-father', data)
+        }
       }
     },
 
     selectedSensorCode (newValue, oldValue) {
+      if(this.verbose) console.log('NMAP: entrato WATCH-SSC')
       if(newValue!=null & newValue != oldValue){
         // NO NEED TO CENTER MAP ACCORDING TO THE FEATURES
         map.scale(110000)
@@ -274,31 +278,32 @@ export default {
         gFeatures.call(map)
 
         this.setUpSensors()
-        this.restoreOnClick()
       }
     },
 
     neighborhoodSensorCodes () {
-        map.scale(110000)
-        pt.scale(110000)
+      if(this.verbose) console.log('NMAP: entrato WATCH-NSC')
+      map.scale(110000)
+      pt.scale(110000)
 
-        const gWorld = d3.select(this.$refs.world)
-        gWorld.call(map)
-        const gPoint = d3.select(this.$refs.points)
-        gPoint.call(pt)
-        const gFeatures = d3.select(this.$refs.features)
-        gFeatures.call(map)
+      const gWorld = d3.select(this.$refs.world)
+      gWorld.call(map)
+      const gPoint = d3.select(this.$refs.points)
+      gPoint.call(pt)
+      const gFeatures = d3.select(this.$refs.features)
+      gFeatures.call(map)
 
-        this.setUpSensors()
-        this.restoreOnClick()
+      this.setUpSensors()
     },
     hoveredSensorCode (newValue, oldValue){
+      if(this.verbose) console.log('NMAP: entrato WATCH-HSC')
       // ADDED TO INTERACTION BETWEEN BAR AND MAP
       var oldSelector = 'path#' + oldValue
       var newSelector = 'path#' + newValue
       var classes = ''
       var selected
 
+      console.log(oldValue)
       if(oldValue != null & oldValue != '') {
         selected = d3.selectAll(oldSelector)
         if(selected != null){
@@ -307,6 +312,7 @@ export default {
         }
       }
       
+      console.log(newValue)
       if(newValue != null & newValue != '') {
         selected = d3.selectAll(newSelector)
         if(selected != null){
@@ -315,7 +321,7 @@ export default {
         }
       }
 
-      this.restoreOnClick()
+      this.setUpSensors()
     }
   }
 }

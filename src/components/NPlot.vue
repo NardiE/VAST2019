@@ -41,10 +41,10 @@ export default {
          color: 'white',
          height: 250,
          margin: {
-            t: 9,
-            l: 9,
-            b: 0,
-            r: 9,
+            t: 6,
+            l: 6,
+            b: 6,
+            r: 6,
             pad: 1,
          },
          xaxis: {
@@ -77,24 +77,15 @@ export default {
       },
     };
   },
+  mounted () {
+    if(this.cfAggregation){
+      // TO HANDLE WATCH BEFORE MOUNTED
+      this.refreshChart (this.cfAggregation)
+    }
+  },
   watch: {
     cfAggregation(newVal) {
-      // SORT X BASED ON Y VALUES
-      var tmpIdx = newVal.y.map(function(e,i){return {ind: i, val: e}});
-      tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
-      var idx = tmpIdx.map(function(e){return e.ind});
-      var ordX = []
-      idx.forEach(function (value, i) {
-        ordX[i] = newVal.x[value]
-      });
-      // USINF CATEGORICYORDER TO DO THIS
-      this.layout.xaxis.categoryorder = 'array'
-      this.layout.xaxis.categoryarray = ordX
-
-      this.data[0].x = newVal.x;
-      this.data[0].y = newVal.y;
-      this.data[0].text = newVal.text;
-      this.data[0].marker.color = newVal.color;
+      this.refreshChart (newVal)
     },
   },
   methods: {
@@ -113,7 +104,30 @@ export default {
         return (d.x);
       })
       this.$emit('click-sensor', infotext)
+    },
+    refreshChart (newVal) {
+      // SORT X BASED ON Y VALUES
+      var myData = [...this.data]
+
+      var tmpIdx = newVal.y.map(function(e,i){return {ind: i, val: e}});
+      tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
+      var idx = tmpIdx.map(function(e){return e.ind});
+      var ordX = []
+      idx.forEach(function (value, i) {
+        ordX[i] = newVal.x[value]
+      });
+      // USINF CATEGORICYORDER TO DO THIS
+      this.layout.xaxis.categoryorder = 'array'
+      this.layout.xaxis.categoryarray = ordX
+
+      myData[0].x = newVal.x;
+      myData[0].y = newVal.y;
+      myData[0].text = newVal.text;
+      myData[0].marker.color = newVal.color;
+
+      this.data = myData      
     }
+
   },
 };
 </script>

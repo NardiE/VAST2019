@@ -29,7 +29,7 @@ export default {
   data() {
     return {
       // DEVELOPEMENT
-      verbose: false,
+      verbose: true,
 
       fakeSensorPoint: {
         properties: {
@@ -264,8 +264,8 @@ export default {
     },
 
     selectedSensorCode (newValue, oldValue) {
-      if(this.verbose) console.log('NMAP: entrato WATCH-SSC')
       if(newValue!=null & newValue != oldValue){
+        if(this.verbose) console.log('NMAP: entrato WATCH-SSC')
         // NO NEED TO CENTER MAP ACCORDING TO THE FEATURES
         map.scale(110000)
         pt.scale(110000)

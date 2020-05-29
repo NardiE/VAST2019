@@ -1,6 +1,6 @@
 <template>
   <div>
-    <b-container fluid class="mt-3" v-show="mode=='timeseries'">
+    <b-container class="" v-show="mode=='timeseries'">
       <b-row  class="mt-3">
         <b-col class cols = "12">
           <div style="height:700px" >
@@ -228,9 +228,6 @@ export default {
 
   mounted () {
     if (this.enableLoading) {
-      
-      if(this.verbose) console.log('NPP: Aggiungo modalità visualizzazione una volta finito il caricamento')
-        this.mode = modes[0]
 
       // LOAD DATA AGGREGATE 1H
       d3.csv('/data/newFeatures.csv').then(data => {
@@ -247,12 +244,16 @@ export default {
         dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
 
         // REFRESHING COMPONENT
-        if(this.verbose) console.log('NPP: AGGIORNO QUI')
+        if(this.verbose) console.log('NPP: Aggiorno i componenti')
+
         // TODO this.refreshMap(dTimeStamp, this.timeStamp)
         this.refreshMap(dTimeStamp, null)
         this.refreshBarChart (dTimeStamp)
         this.refreshCounters()
         this.refreshTimeSeries(dTimeStamp)
+      
+        if(this.verbose) console.log('NPP-MOUNTED: Aggiungo modalità visualizzazione una volta finito il caricamento')
+        this.mode = modes[0]
       })
     }
   },
@@ -265,6 +266,7 @@ export default {
 
     // REFRESHING FUNCTIONS
     refreshCounters(){
+      if(this.verbose) console.log('NPP - I refresh the Counters')
       this.pointNumber = cf.groupAll().reduceCount().value();
       this.totalRadiation = Number(parseFloat(cf.groupAll().reduceSum(d => d.Radiation).value()).toFixed(2));
       this.avgTotalRadiation = Number((this.totalRadiation/this.pointNumber).toFixed(2))
@@ -279,19 +281,19 @@ export default {
       this.avgMobileRadiation =  Number(parseFloat(this.mobileTotalRadiation/this.mobileSensorNumber).toFixed(2))
     },
     refreshBarChart (cfDimension) {
-      if(this.verbose) console.log('NPP: entrato REFRESH-BC')
+      if(this.verbose) console.log('NPP - I refresh the Bar Chart')
       this.barCollection = this.getBarChartFromReport(cfDimension.top(this.featureNumbers))
     },
     refreshMap (cfDimension, filter) {
       if (cfDimension && this.enableLoading) {
-        if(this.verbose) console.log('NPP: entrato REFRESH-MAP (filter) ' + filter)
+      if(this.verbose) console.log('NPP - I refresh the Map with Date: ' + filter)
         cfDimension.filter(filter)
         this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
       }
     },
     refreshTimeSeries(cfDimension){
       cfDimension.filter(null)
-      if(this.verbose) console.log('NPP: entrato REFRESH-TS')
+      if(this.verbose) console.log('NPP - I refresh the TimeSeries')
       this.tsCollection = this.getTsFromReport(cfDimension.top(this.featureNumbers))
       console.log(this.tsCollection)
     },
@@ -303,10 +305,16 @@ export default {
         if(d.SensorId.trim() != ''){
           // IF SENSOR NOT EXISTS
           if(!ts[d.SensorId]){
-            ts[d.SensorId] = {x:[], y:[], text:[], color:'#2d2d2d', node : {}}
+            ts[d.SensorId] = {x:[], y:[], text:[], color:'#2d2d2d', node : {}, borderColor: 'white'}
           }
-          if(d.SensorType == 'static') ts[d.SensorId].symbol = 'square-cross'
-          else if(d.SensorType == 'mobile') ts[d.SensorId].symbol = 'circle-cross'
+          if(d.SensorType == 'static'){
+            ts[d.SensorId].color = 'white'
+            ts[d.SensorId].borderColor = '#2d2d2d'
+          } 
+          else if(d.SensorType == 'mobile'){
+            ts[d.SensorId].color = '#2d2d2d'
+            ts[d.SensorId].borderColor = 'white'
+          }
           ts[d.SensorId].x.push(d.Timestamp)
           ts[d.SensorId].y.push(d.Radiation)
           ts[d.SensorId].text.push(d.SensorId)
@@ -344,7 +352,7 @@ export default {
               type: 'Feature',
               properties: {
                 UserId: d.UserId,
-                SensorId: d['SensorId'],
+                SensorId: d.SensorId,
                 SensorType: d.SensorType,
                 Timestamp: d.Timestamp,
                 Units: d.Units,
@@ -363,66 +371,77 @@ export default {
     // CALLBACK FUNCTIONS (RECEIVE UPDATE FROM CHILD COMPONENTS)
     /* TIMECOMPONENT */
     updateTimeStamp (value) {
-      if(this.verbose) console.log('NPP: ENTRATO UTS')
+      if(this.verbose) console.log('NPP - Time Component change the Date to: ' + value)
       this.timeStamp = value
     },
     setIncrement(value){
-      if(this.verbose) console.log('NPP: ENTRATO "SET INCREMENT" from TIME COMPONENT')
+      if(this.verbose) console.log('NPP - Time increment changed to: ' + value)
       this.increment = value
       this.settingVisible = false
     },
     /* MAPCOMPONENT (HANDLE DISAPPEARING POINTS)*/
     addNeighbor(value){
+      if(this.verbose) console.log('NPP - The Map Component want to add a neighbor: ' + value)
       if(value != null) this.neighborhoodSensorCodes.push(value)
     },
     removeNeighbor(value){
+      if(this.verbose) console.log('NPP - The Map Component want to remove a neighbor: ' + value)
       if(value != null){
         var idx = this.neighborhoodSensorCodes.indexOf(value)
         if(idx > -1) this.neighborhoodSensorCodes.splice(idx,1)
       }
     },
     removeNeighbors(){
+      if(this.verbose) console.log('NPP - The Map Component want to remove all neighbors')
       this.neighborhoodSensorCodes = []
     },
     addFather(node){
+      if(this.verbose) console.log('NPP - The Map Component want to add a Father: ' + node.properties.SensorId)
       this.selectedSensorPoint = node
     },
     removeFather(){
-      this.selectedSensorPoint = this.fakeSensorPoint
+      this.selectedSensorPoint = JSON.parse(JSON.stringify(this.fakeSensorPoint))
+      if(this.verbose) console.log('NPP - The Map Component want to remove the Father, so the Father is: ' + this.selectedSensorPoint.properties.SensorId)
     },
     updateSensorPoint (...args) {
       const[value,array] = args
       this.selectedSensorPoint = value
       this.neighborhoodSensorCodes = array
     },
-    hoverSensorMap (newVal) {
+    hoverSensorMap (newVal) { 
+      if(this.verbose) console.log('NPP - The Map Component indicate the hover Sensor: ' + newVal)
       this.hoveredMapSensorCode = newVal
     },
+
     /* PLOTCOMPONENT (BARCHART)*/
     hoverSensor (newVal) {
-      if(this.verbose) console.log('NPP: entrato HS -' + newVal[0])
+      if(this.verbose) console.log('NPP - The Plot Component indicate the hover Sensor: ' + newVal[0])
       this.hoveredSensorCode = newVal[0]
     },
     clickSensor(snsCode){
-      if(this.verbose) console.log('NPP: entrato CS -' + snsCode)
+      if(this.verbose) console.log('NPP - The Plot Component trigger a Click on: ' + snsCode)
       if(snsCode){
         var sensCode = snsCode[0]
         // IF I REMOVE FATHER, I NEED TO REMOVE NEIGHBORS TOO
         if(this.selectedSensorPoint.properties.SensorId == sensCode){
-            this.selectedSensorPoint.properties.SensorId = ''
-            this.neighborhoodSensorCodes = []
+          if(this.verbose) console.log('so the Father is: ' +  this.selectedSensorPoint.properties.SensorId)
+          this.selectedSensorPoint = JSON.parse(JSON.stringify(this.fakeSensorPoint)) // FIXME can cause problem
+          this.neighborhoodSensorCodes = []
         }
         // IF I HAVE NOT A FATHER, NEW SENSOR MAY BE A FATHER
         else if(this.selectedSensorPoint.properties.SensorId == ''){
+          if(this.verbose) console.log('so the Father is: ' + sensCode)
           this.selectedSensorPoint.properties.SensorId = sensCode
         }
         // IF THE SELECTED BAR SENSOR IS A NEIGHBORS I REMOVE IT
         else if(this.neighborhoodSensorCodes.includes(sensCode)){
+          if(this.verbose) console.log('so I remove the Neigbhor: ' + sensCode)
           var index = this.neighborhoodSensorCodes.indexOf(sensCode);
           if (index !== -1) this.neighborhoodSensorCodes.splice(index, 1);
         }
         // ELSE I ADD IT AS A NEIGHBORS
         else{
+          if(this.verbose) console.log('so I add the Neigbhor: ' + sensCode)
           this.neighborhoodSensorCodes.push(sensCode)
         }
       }
@@ -430,15 +449,18 @@ export default {
 
     // VISUALIZATION MODES
     switchToTimeSeries () {
-      dTimeStamp.filter(null)
+      if(this.verbose) console.log('NPP - Passing to Time Series Visualization')
+      this.selectedSensorPoint = JSON.parse(JSON.stringify(this.fakeSensorPoint))
       this.mode = modes[0]
     },
     switchToMap (...args) {
       const[timeStamp,sensor] = args
+      console.log(sensor)
+      if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + sensor[0].Timestamp + ' for Sensor: ' + sensor[0].SensorId)}
       if(sensor){
-        if(this.verbose) console.log('NPP: entrato STM (sensorId) ' + sensor[0])
-        var tmpSensorPoint = this.selectedSensorPoint
-        this.selectedSensorPoint = this.fakeSensorPoint
+        // use to DEEP COPY
+        var tmpSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
+        this.selectedSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
         
         tmpSensorPoint.properties.SensorId = sensor[0].SensorId
         tmpSensorPoint.properties.UserId = sensor[0].UserId
@@ -446,8 +468,12 @@ export default {
         tmpSensorPoint.properties.Timestamp = sensor[0].Timestamp
         tmpSensorPoint.properties.Units = sensor[0].Units
         tmpSensorPoint.properties.Radiation = sensor[0].Radiation
+        var coordinates = [sensor[0].Latitude,sensor[0].Longitude]
+        tmpSensorPoint.geometry.coordinates = [...coordinates]
 
-        this.selectedSensorPoint = tmpSensorPoint
+        this.selectedSensorPoint = JSON.parse(JSON.stringify(tmpSensorPoint))
+
+        this.removeNeighbors()
       }
       if(timeStamp){
         if(this.verbose) console.log('NPP: entrato STM (timestamp) ' + timeStamp[0])
@@ -485,26 +511,27 @@ export default {
 
   watch: {
     // ALL WATCHED FUNCTION, EVERY LOGICS INSERTED HERE TO NOT MAKE HEAVY ONCLICK COMPONENT ACTIONS
-    selectedSensorPoint () {
-      if(this.verbose) 
-        console.log('NPP: entrato WATCH SSP')
-      this.refreshBarChart (dTimeStamp)
-      this.refreshCounters()
+    selectedSensorPoint:{
+      deep: true,
+      handler() {
+        if(this.verbose) console.log('NPP-WATCH - Sensor change to: ' + this.selectedSensorPoint.properties.SensorId)
+        this.refreshBarChart (dTimeStamp)
+        this.refreshCounters()
+      }
     },
     neighborhoodSensorCodes (){
-      if(this.verbose) console.log('NPP: entrato WATCH NSC')
+      if(this.verbose){ console.log('NPP-WATCH - Neighboors change to :'); console.log(this.neighborhoodSensorCodes)}
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
     },
-    timeStamp () {
-      if(this.verbose) console.log('NPP: entrato WATCH TS')
-      this.refreshMap(dTimeStamp, this.timeStamp)
+    timeStamp (newVal) {
+      if(this.verbose) console.log('NPP-WATCH - Time Stamp change to: ' + newVal)
+      this.refreshMap(dTimeStamp, newVal)
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
     },
-    hoveredMapSensorCode (){
-      if(this.verbose) 
-        console.log('NPP: entrato WATCH HMSC')
+    hoveredMapSensorCode (newVal){
+      if(this.verbose) console.log('NPP-WATCH - Hovered Sensor change to: ' + newVal)
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
     }

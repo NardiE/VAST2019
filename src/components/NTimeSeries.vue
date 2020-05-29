@@ -34,7 +34,7 @@ export default {
         xaxis: {
           linecolor: '#2d2d2d',
           gridcolor: '#2d2d2d',
-          linewidth: 2,
+          linewidth: 0,
           showgrid: false,
           showline: false,
           showticklabels: false,
@@ -43,12 +43,12 @@ export default {
         yaxis: {
             linecolor: '#2d2d2d',
             gridcolor: '#2d2d2d',
-            linewidth: 2,
+            linewidth: 0,
             showgrid: false,
             showline: false,
             showticklabels: false
          },
-        plot_bgcolor: '#2d2d2d',
+        plot_bgcolor: 'rgba(45,45,45,0.4)',
         paper_bgcolor: 'white'
       },
       options: {
@@ -61,73 +61,84 @@ export default {
         //
       },
       config: {
-      }
+      },
+      verbose: true
     };
+  },
+  mounted () {
+      this.refreshTimeSeries(this.cfAggregation);
   },
   watch: {
     cfAggregation(newVal) {
-      var i = 0
-      var myData = [{}]
-      for (var val in newVal)
-      {
-        myData[i] = {
-          x:[], 
-          y:[], 
-          text:[], 
-          type: 'scatter',
-          hovertemplate: '<br><b>Time</b>: %{x}<br>' +
-                          '<b>Sensor</b>: %{text}<br>' +
-                          '<br><i>Radiation</i>: %{y:.2f} cpm',
-          name: '',
-          
-          mode: 'lines+markers',
-          marker: {
-            color:  'white',
-            symbol: 'circle-dot',
-            line: {
-              color: '#2d2d2d',
-              width: 1
-            },
-            size: 9
-          },
-          line: {
-            color:  'white',
-            width: 1
-         }
-        }
-        var tmpIdx = newVal[val].y.map(function(e,i){return {ind: i, val: e}});
-        // sort index/value couples, based on values
-        tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
-        // make list keeping only indices
-        var idx = tmpIdx.map(function(e){return e.ind});
-
-        var ordX = []
-        idx.forEach(function (value, i) {
-          ordX[i] = newVal[val].x[value]
-        });
-
-        myData[i].x = newVal[val].x;
-        myData[i].y = newVal[val].y;
-        myData[i].text = newVal[val].text;
-        myData[i].node = newVal[val].node
-        myData[i].marker.symbol = newVal[val].symbol
-
-        i += 1
-      }
-
-      // Updating directly internal data does not trigger redraw
-      this.data = myData
-    },
+      this.refreshTimeSeries(newVal)
+    }
   },
   methods: {
     click(data){
       var timestamp = data.points.map(function(d){
-        return (d.x + ':00');
+        if(d.x.length == 10) return (d.x + ' 00:00:00');
+        else return (d.x + ':00');
       })
       var sensor = data.points.map(function(d){
         return (d.data.node);
       })
       this.$emit('click-inside',timestamp, sensor)
+    },
+    refreshTimeSeries(newVal) {
+      var i = 0
+      var myData = [{}]
+      for (var val in newVal)
+      {
+        if(newVal && newVal[val] && newVal[val].y){
+          myData[i] = {
+            x:[], 
+            y:[], 
+            text:[], 
+            type: 'scatter',
+            hovertemplate: '<br><b>Time</b>: %{x}<br>' +
+                            '<b>Sensor</b>: %{text}<br>' +
+                            '<br><i>Radiation</i>: %{y:.2f} cpm',
+            name: '',
+            
+            mode: 'lines+markers',
+            marker: {
+              color:  '#2d2d2d',
+              line: {
+                color: 'white',
+                width: 1
+              },
+              size: 9
+            },
+            line: {
+              color:  'white',
+              width: 0.5
+          }
+          }
+          var tmpIdx = newVal[val].y.map(function(e,i){return {ind: i, val: e}});
+          // sort index/value couples, based on values
+          tmpIdx.sort(function(a, b){return a.val > b.val ? 1 : a.val == b.val ? 0 : -1});
+          // make list keeping only indices
+          var idx = tmpIdx.map(function(e){return e.ind});
+
+          var ordX = []
+          idx.forEach(function (value, i) {
+            ordX[i] = newVal[val].x[value]
+          });
+
+          myData[i].x = newVal[val].x;
+          myData[i].y = newVal[val].y;
+          myData[i].text = newVal[val].text;
+          myData[i].node = newVal[val].node
+          myData[i].marker.color = newVal[val].color
+          myData[i].marker.line.color = newVal[val].borderColor
+          myData[i].line.color = newVal[val].color
+
+          i += 1
+        }
+      }
+
+      // Updating directly internal data does not trigger redraw
+      this.data = myData
     }
   },
 };

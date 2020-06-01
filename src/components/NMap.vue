@@ -132,6 +132,8 @@ export default {
       d3  
       .selectAll('.data')
       .on("click", (d) => {
+        // d3.select(this).style('fill', 'black')
+        // d3.select(this).style('fill', null)
         var selected = d3
         .select('path.selected')
         if(!selected.empty()) {
@@ -144,7 +146,6 @@ export default {
         }
       })
       .on("mouseenter", function (d){
-        d3.select(this).style('fill', 'green')
         self.$emit('hover-sensor', d.properties.SensorId)
         if(this.verbose) console.log(d)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
@@ -152,7 +153,6 @@ export default {
         d3.event.preventDefault()
       })
       .on("mouseleave", function (){
-        d3.select(this).style('fill', null)
         self.$emit('hover-sensor', '')        
         d3.event.stopPropagation();
         d3.event.preventDefault()

@@ -19,7 +19,7 @@ export default {
       }
       ],
       layout: {
-        height: 800,
+        height: 400,
         autosize: true,
         showlegend: false,
         color: 'white',
@@ -82,7 +82,7 @@ export default {
       var sensor = data.points.map(function(d){
         return (d.data.node);
       })
-      this.$emit('click-inside',timestamp, sensor)
+      this.$emit('click-inside',timestamp, sensor[0])
     },
     refreshTimeSeries(newVal) {
       var i = 0

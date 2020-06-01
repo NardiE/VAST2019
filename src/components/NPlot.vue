@@ -103,7 +103,13 @@ export default {
       var infotext = data.points.map(function(d){
         return (d.x);
       })
-      this.$emit('click-sensor', infotext)
+      var sensor = data.points.map(function(d){
+        return (d.data.node);
+      })
+      var index = data.points.map(function(d){
+        return (d.pointIndex);
+      })
+      this.$emit('click-sensor', infotext, sensor[0][index[0]])
     },
     refreshChart (newVal) {
       // SORT X BASED ON Y VALUES
@@ -124,7 +130,7 @@ export default {
       myData[0].y = newVal.y;
       myData[0].text = newVal.text;
       myData[0].marker.color = newVal.color;
-
+      myData[0].node = newVal.node
       this.data = myData      
     }
 

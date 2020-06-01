@@ -1,9 +1,9 @@
 <template>
   <div>
-    <b-container class="" v-show="mode=='timeseries'">
+    <b-container fluid class="" v-show="mode=='timeseries'">
       <b-row  class="mt-3">
         <b-col class cols = "12">
-          <div style="height:700px" >
+          <div style="height:400px" >
             <div>
                 <NTimeSeries :cfAggregation="tsCollection" @click-inside = "switchToMap"></NTimeSeries>
             </div>>
@@ -41,7 +41,7 @@
       </b-row>
       <b-row class="">
         <b-col>
-          <div style="height: 450px">
+          <div style="height: 400px">
             <NMap @hover-sensor="hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
             @add-father = "addFather" @remove-father = "removeFather"
             :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes
@@ -86,6 +86,7 @@ import NTimeSeries from '@/components/NTimeSeries.vue'
 
 // eslint-disable-next-line
 import Vue from 'vue';
+import axios from 'axios';
 
 import crossfilter from 'crossfilter'
 import * as d3 from 'd3'
@@ -101,16 +102,6 @@ let dTimeStamp
 var numerics = ['Latitude', 'Longitude', 'Radiation']
 
 var modes = ['timeseries', 'map'];
-/* var columns = [
-  'UserId',
-  'Latitude',
-  'Longitude',
-  'SensorId',
-  'SensorType',
-  'Timestamp',
-  'Units',
-  'Radiation'
-] */
 
 export default {
   name: 'NPartitionedPoster',
@@ -228,33 +219,19 @@ export default {
 
   mounted () {
     if (this.enableLoading) {
-
-      // LOAD DATA AGGREGATE 1H
-      d3.csv('/data/newFeatures.csv').then(data => {
-        // coerce numbers to floats, empty strings to null
-        data.forEach((d) => {
-          numerics.forEach(function (dim) {
-            d[dim] = +d[dim]
-          })
-          d['Coords'] = [d['Longitude'], d['Latitude']]
-        })
-
-        // CROSS FILTER SETUP
-        cf = crossfilter(data)
-        dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
-
-        // REFRESHING COMPONENT
-        if(this.verbose) console.log('NPP: Aggiorno i componenti')
-
-        // TODO this.refreshMap(dTimeStamp, this.timeStamp)
-        this.refreshMap(dTimeStamp, null)
-        this.refreshBarChart (dTimeStamp)
-        this.refreshCounters()
-        this.refreshTimeSeries(dTimeStamp)
-      
-        if(this.verbose) console.log('NPP-MOUNTED: Aggiungo modalità visualizzazione una volta finito il caricamento')
-        this.mode = modes[0]
+      axios.get(`http://localhost:3000/features/hours`)
+      .then(response => {
+        if(this.verbose) console.log('NPP - Data Loaded from Web Server')
+        // JSON responses are automatically parsed.
+        this.baseIncrement = 3600
+        this.initalizeData(response.data)
       })
+      .catch((e) => {// LOAD DATA AGGREGATE 1H
+        if(this.verbose) console.log('NPP - Data Loaded from File' + e)
+        d3.csv('/data/newFeatures.csv').then(data => {
+          this.initalizeData(data)
+        })
+      })   
     }
   },
 
@@ -324,11 +301,12 @@ export default {
       return ts
     },
     getBarChartFromReport (data) {
-      const tc = {x:[], y:[], text:[], color:[]}
+      const tc = {x:[], y:[], text:[], color:[], node: []}
       data.forEach( (d) => {
         tc.x.push(d.SensorId)
         tc.y.push(d.Radiation)
         tc.text.push(d.Units)
+        tc.node.push(d)
         // ADDING COLOR WITH RESERVE TO SENSOR STATUS (HOVERED, FATHER, NEIGHBOR)    
         if (d.SensorId == this.hoveredMapSensorCode)
           tc.color.push('rgba(0, 255, 0, 0.6)')
@@ -412,13 +390,16 @@ export default {
       if(this.verbose) console.log('NPP - The Map Component indicate the hover Sensor: ' + newVal)
       this.hoveredMapSensorCode = newVal
     },
-
     /* PLOTCOMPONENT (BARCHART)*/
     hoverSensor (newVal) {
       if(this.verbose) console.log('NPP - The Plot Component indicate the hover Sensor: ' + newVal[0])
       this.hoveredSensorCode = newVal[0]
     },
-    clickSensor(snsCode){
+    clickSensor(...args){
+      const[snsCode,sensor] = args
+      console.log('PORCO DIO')
+      console.log(snsCode)
+      console.log(sensor[0])
       if(this.verbose) console.log('NPP - The Plot Component trigger a Click on: ' + snsCode)
       if(snsCode){
         var sensCode = snsCode[0]
@@ -431,7 +412,19 @@ export default {
         // IF I HAVE NOT A FATHER, NEW SENSOR MAY BE A FATHER
         else if(this.selectedSensorPoint.properties.SensorId == ''){
           if(this.verbose) console.log('so the Father is: ' + sensCode)
-          this.selectedSensorPoint.properties.SensorId = sensCode
+          if(sensor){
+            // use to DEEP COPY
+            var tmpSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
+            tmpSensorPoint.properties.SensorId = sensor.SensorId
+            tmpSensorPoint.properties.UserId = sensor.UserId
+            tmpSensorPoint.properties.SensorType = sensor.SensorType
+            tmpSensorPoint.properties.Timestamp = sensor.Timestamp
+            tmpSensorPoint.properties.Units = sensor.Units
+            tmpSensorPoint.properties.Radiation = sensor.Radiation
+            var coordinates = [sensor.Latitude,sensor.Longitude]
+            tmpSensorPoint.geometry.coordinates = [...coordinates]
+            this.selectedSensorPoint = JSON.parse(JSON.stringify(tmpSensorPoint))
+          }
         }
         // IF THE SELECTED BAR SENSOR IS A NEIGHBORS I REMOVE IT
         else if(this.neighborhoodSensorCodes.includes(sensCode)){
@@ -446,34 +439,25 @@ export default {
         }
       }
     },
-
-    // VISUALIZATION MODES
-    switchToTimeSeries () {
-      if(this.verbose) console.log('NPP - Passing to Time Series Visualization')
-      this.selectedSensorPoint = JSON.parse(JSON.stringify(this.fakeSensorPoint))
-      this.mode = modes[0]
-    },
+    /* TIMESERIES COMPONENT (TIMESERIES) */
     switchToMap (...args) {
       const[timeStamp,sensor] = args
       console.log(sensor)
-      if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + sensor[0].Timestamp + ' for Sensor: ' + sensor[0].SensorId)}
+      if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + sensor.Timestamp + ' for Sensor: ' + sensor.SensorId)}
       if(sensor){
         // use to DEEP COPY
         var tmpSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
-        this.selectedSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
         
-        tmpSensorPoint.properties.SensorId = sensor[0].SensorId
-        tmpSensorPoint.properties.UserId = sensor[0].UserId
-        tmpSensorPoint.properties.SensorType = sensor[0].SensorType
-        tmpSensorPoint.properties.Timestamp = sensor[0].Timestamp
-        tmpSensorPoint.properties.Units = sensor[0].Units
-        tmpSensorPoint.properties.Radiation = sensor[0].Radiation
-        var coordinates = [sensor[0].Latitude,sensor[0].Longitude]
+        tmpSensorPoint.properties.SensorId = sensor.SensorId
+        tmpSensorPoint.properties.UserId = sensor.UserId
+        tmpSensorPoint.properties.SensorType = sensor.SensorType
+        tmpSensorPoint.properties.Timestamp = sensor.Timestamp
+        tmpSensorPoint.properties.Units = sensor.Units
+        tmpSensorPoint.properties.Radiation = sensor.Radiation
+        var coordinates = [sensor.Latitude,sensor.Longitude]
         tmpSensorPoint.geometry.coordinates = [...coordinates]
 
         this.selectedSensorPoint = JSON.parse(JSON.stringify(tmpSensorPoint))
-
-        this.removeNeighbors()
       }
       if(timeStamp){
         if(this.verbose) console.log('NPP: entrato STM (timestamp) ' + timeStamp[0])
@@ -482,6 +466,13 @@ export default {
       }
     },
 
+    // VISUALIZATION MODES
+    switchToTimeSeries () {
+      if(this.verbose) console.log('NPP - Passing to Time Series Visualization')
+      this.selectedSensorPoint = JSON.parse(JSON.stringify(this.fakeSensorPoint))
+      this.removeNeighbors()
+      this.mode = modes[0]
+    },
     // OTHER FUNCTIONS
     customAggregation (filter) {
       return cf.groupAll().reduce( 
@@ -506,6 +497,30 @@ export default {
           avg: 0
         };
       })
+    },
+    initalizeData(data){
+      // coerce numbers to floats, empty strings to null
+      if(this.verbose){ console.log('NPP - I readed data: '); console.log(data)}
+      
+      data.forEach((d) => {
+        numerics.forEach(function (dim) {
+          d[dim] = +d[dim]
+        })
+        d['Coords'] = [d['Longitude'], d['Latitude']]
+      })
+
+      // CROSS FILTER SETUP
+      cf = crossfilter(data)
+      dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
+      // REFRESHING COMPONENT
+      if(this.verbose) console.log('NPP: Aggiorno i componenti')
+      this.refreshMap(dTimeStamp, null)
+      this.refreshBarChart (dTimeStamp)
+      this.refreshCounters()
+      this.refreshTimeSeries(dTimeStamp)
+      
+      if(this.verbose) console.log('NPP-MOUNTED: Aggiungo modalità visualizzazione una volta finito il caricamento')
+      this.mode = modes[0]
     }
   },
 
@@ -534,6 +549,7 @@ export default {
       if(this.verbose) console.log('NPP-WATCH - Hovered Sensor change to: ' + newVal)
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
+      //this.refreshMap(dTimeStamp, newVal)
     }
   },
   computed: {
@@ -550,8 +566,8 @@ export default {
 
 
 .container-fluid {
-  margin-top: 50px;
-  padding-top: 40px;
+  margin-top: 40px;
+  padding-top: 10px;
   margin-bottom:20px;
 }
 </style>

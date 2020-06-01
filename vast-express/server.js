@@ -1,6 +1,6 @@
 // create a connector to access the database
 var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('vast.db');
+var db = new sqlite3.Database('data/vast.db');
 
 // initialize express 
 var express = require('express');

@@ -79,11 +79,13 @@ export default {
   methods: { 
     // USED IN THE SETUP TO DRAW COMPONENTS (USED TO HANDLE DISEAPPEARING POINTS)
     markSensor (idSensor, clas) {
+      
       var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
-      var el = d3.selectAll(selector)
+      var el = d3.select(selector)
       if (!el.empty()){
+        if(this.verbose) console.log('NMAP - Marco il sensore: ' + idSensor + ' da ' + el.attr('class') +' a ' + (el.attr('class').trim() + ' ').replace('  ',' ') + clas)
       // prendo classi preesistenti e aggiungo la mia
-        var classes = el.attr('class') + ' ' + clas
+        var classes = (el.attr('class').trim() + ' ').replace('  ',' ') + clas
         el.attr('class', classes)
         this.restoreOnClick()
       }
@@ -93,7 +95,7 @@ export default {
       var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
       var el = d3.selectAll(selector)
       if (!el.empty()){
-        var classes = el.attr('class').replace(clas, '')
+        var classes = el.attr('class').trim().replace(clas, '').trim()
         d3.selectAll(selector).attr('class', classes)
         this.restoreOnClick()
       }
@@ -102,9 +104,13 @@ export default {
     unMarkAllSensors(clas){
       var selector = clas == '' ? 'path#FAKEID' : 'path.' + clas
       var el = d3.selectAll(selector)
+      var classes = ''
       if (!el.empty()){
-        var classes = el.attr('class').replace(clas, '')
-        d3.selectAll(selector).attr('class', classes)
+        el.forEach((d) => {
+          classes = d.attr('class').trim().replace(clas, '').trim()
+          d.attr('class', classes)
+        })
+        
         this.restoreOnClick()
       }
     },
@@ -132,8 +138,6 @@ export default {
       d3  
       .selectAll('.data')
       .on("click", (d) => {
-        // d3.select(this).style('fill', 'black')
-        // d3.select(this).style('fill', null)
         var selected = d3
         .select('path.selected')
         if(!selected.empty()) {
@@ -157,7 +161,6 @@ export default {
         d3.event.stopPropagation();
         d3.event.preventDefault()
       })
-      .attr('pointer-events', 'all')
       
       // EVENT FOR NEIGHBORS
       d3
@@ -170,13 +173,13 @@ export default {
         // I DON'T CHANGE COLOR IF IS A FATHER OR A NEIGHBOR
         self.$emit('hover-sensor', d.properties.SensorId)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
-        d3.event.stopPropagation();
-        d3.event.preventDefault()
+        // d3.event.stopPropagation();
+        // d3.event.preventDefault()
       })
       .on("mouseleave", function (){
         self.$emit('hover-sensor', '')        
-        d3.event.stopPropagation();
-        d3.event.preventDefault()
+        // d3.event.stopPropagation();
+        // d3.event.preventDefault()
       })
 
       d3
@@ -190,13 +193,13 @@ export default {
         // I DON'T CHANGE COLOR IF IS A FATHER OR A NEIGHBOR
         self.$emit('hover-sensor', d.properties.SensorId)
         d3.select(this).select('title').text(function(d) {return 'Sensor Id: ' + d.properties.SensorId + ' Radiation: ' + Number(d.properties.Radiation).toFixed(2)})
-        d3.event.stopPropagation();
-        d3.event.preventDefault()
+        // d3.event.stopPropagation();
+        // d3.event.preventDefault()
       })
       .on("mouseleave", function (){
         self.$emit('hover-sensor', '')        
-        d3.event.stopPropagation();
-        d3.event.preventDefault()
+        // d3.event.stopPropagation();
+        // d3.event.preventDefault()
       })
       
     }
@@ -303,21 +306,19 @@ export default {
       var classes = ''
       var selected
 
-      console.log(oldValue)
       if(oldValue != null & oldValue != '') {
         selected = d3.selectAll(oldSelector)
         if(selected != null){
           classes = selected.attr('class')
-          d3.selectAll(oldSelector).attr('class', classes.replace('hover', ''))
+          d3.select(oldSelector).attr('class', classes.trim().replace('hover', '').trim())
         }
       }
       
-      console.log(newValue)
       if(newValue != null & newValue != '') {
         selected = d3.selectAll(newSelector)
         if(selected != null){
           classes = selected.attr('class')
-          d3.selectAll(newSelector).attr('class', classes + ' hover')
+          d3.select(newSelector).attr('class', (classes.trim() + ' hover').replace('  ', ' '))
         }
       }
 
@@ -344,31 +345,24 @@ export default {
   }
   g.features path.static {
     fill: white;
-    pointer-events: all;
   }
   g.features path.static.selected  {
     fill: red;
-    pointer-events: all;
   }
   g.features path.mobile.selected  {
     fill: red;
-    pointer-events: all;
   }
   g.features path.static.neighborhood  {
     fill: blue;
-    pointer-events: all;
   }
   g.features path.mobile.neighborhood  {
     fill: blue;
-    pointer-events: all;
   }
   g.features path.static.hover  {
     fill: green;
-    pointer-events: all;
   }
   g.features path.mobile.hover  {
     fill: green;
-    pointer-events: all;
   }
   g.points text.point {
     cursor: pointer; /* decoration */

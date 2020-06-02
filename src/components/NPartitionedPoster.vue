@@ -228,7 +228,7 @@ export default {
       })
       .catch((e) => {// LOAD DATA AGGREGATE 1H
         if(this.verbose) console.log('NPP - Data Loaded from File' + e)
-        d3.csv('/data/newFeatures.csv').then(data => {
+        d3.csv('/data/features.csv').then(data => {
           this.initalizeData(data)
         })
       })   

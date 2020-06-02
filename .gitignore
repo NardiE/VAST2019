@@ -1,7 +1,9 @@
 .DS_Store
 node_modules/
 /dist/
-vast-express/data
+vast-express/data/*.csv
+vast-express/data/*.exe
+vast-express/data/*.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

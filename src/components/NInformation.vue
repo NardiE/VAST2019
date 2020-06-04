@@ -9,7 +9,7 @@
         </b-card-text>
         <b-card-text>
           <b-row class="">
-            <b-col cols="4"  class="text-left"> Pos: </b-col>
+            <b-col cols="4"  class="text-left"> Position: </b-col>
             <b-col cols="8"  class="text-left"> {{ cCoordinates }} </b-col>
           </b-row>
         </b-card-text>
@@ -112,5 +112,12 @@ export default {
   color: white;
   stroke: white;
   font-weight: bold;
+}
+.card-deck{
+  width:100%;
+  margin-bottom: auto;
+  margin-top: auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>

@@ -1,9 +1,12 @@
+
 <template>
   <div id="app">
-    <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow bg-dark text-white">
-      <a class="navbar-brand col-sm-3 col-md-2 mr-0 ml-2 bg-dark text-white" href="#">BlackBoard</a>
-      <font-awesome-icon class="fa-x mr-2" icon="yin-yang" style="color:'white'" />
-    </nav>
+    <b-navbar toggleable type="dark" variant="dark">
+    <b-navbar-brand href="#">BlackBOARD</b-navbar-brand>
+     <b-navbar-toggle>
+       <font-awesome-icon class="fa-x mr-2" icon="yin-yang" style="color:'white'" />
+     </b-navbar-toggle>
+    </b-navbar>
     <NPartitionedPoster></NPartitionedPoster>
   </div>
 </template>

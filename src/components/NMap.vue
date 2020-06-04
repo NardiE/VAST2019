@@ -12,24 +12,36 @@ import Point from '@/assets/js/Point'
 
 const d3 = require('d3')
 
+var myScale = d3.scaleLinear()
+  .domain([200, 2000])
+  .range([60000, 110000]);
+
+var scale = myScale(window.innerWidth)
+
+console.log('SCALA: ' + scale)
+console.log('WIDTH: ' + window.innerWidth)
+
 // MAP + FEATURE LAYER
 const map = MapWithLayers()
-  .scale(110000)
+  .scale(scale)
   .featureClass('SensorType')
   .featureId('SensorId')
 
 // TEXT LAYER
 const pt = Point()
-.scale(110000)
-.featureId('SensorId')
-.featureClass('SensorType')
+  .scale(scale)
+  .featureId('SensorId')
+  .featureClass('SensorType')
 
 export default {
   name: 'NMap',
+  beforeDestroy () {
+    window.removeEventListener("resize", this.ResizeMap());
+  },
   data() {
     return {
       // DEVELOPEMENT
-      verbose: true,
+      verbose: false,
 
       fakeSensorPoint: {
         properties: {
@@ -202,12 +214,30 @@ export default {
         // d3.event.preventDefault()
       })
       
+    },
+    // // THIS IS THE RESPONSABLE TO RESTORE MAP SCALE
+    ResizeMap(){
+      console.log("CULOOOOOOOOOOOOOOOOOOOOOOOO")
+      scale = myScale(window.innerWidth)
+      map.scale(scale)
+      pt.scale(scale)
+
+      const gFeatures = d3.select(this.$refs.features)
+      gFeatures.call(map)
+        
+      const gPoint = d3.select(this.$refs.points)
+      gPoint.call(pt)
+
+      const gWorld = d3.select(this.$refs.world)
+      gWorld.call(map)
+
+      this.setUpSensors()
     }
   },
   mounted () {
     if(this.verbose) console.log('NMAP: entrato MOUNTED (FC) ')
     if(this.verbose) console.log(this.featureCollection)
-
+    window.addEventListener("resize", this.ResizeMap);  
     const gWorld = d3.select(this.$refs.world)
     const gFeatures = d3.select(this.$refs.features)
     const gPoint = d3.select(this.$refs.points)
@@ -237,8 +267,9 @@ export default {
     featureCollection (newFC, oldFC) {
     if(this.verbose) console.log('NMAP: entrato WATCH-FC')
       // FIXED SCALE ON HOUR PURPOSES, NO NEED TO ADD A DYNAMIC ONE
-      map.scale(110000)
-      pt.scale(110000)
+      scale = myScale(window.innerWidth)
+      map.scale(scale)
+      pt.scale(scale)
 
       if(newFC !== oldFC) {
 
@@ -270,8 +301,9 @@ export default {
       if(newValue!=null & newValue != oldValue){
         if(this.verbose) console.log('NMAP: entrato WATCH-SSC')
         // NO NEED TO CENTER MAP ACCORDING TO THE FEATURES
-        map.scale(110000)
-        pt.scale(110000)
+        scale = myScale(window.innerWidth)
+        map.scale(scale)
+        pt.scale(scale)
 
         const gWorld = d3.select(this.$refs.world)
         gWorld.call(map)
@@ -286,8 +318,9 @@ export default {
 
     neighborhoodSensorCodes () {
       if(this.verbose) console.log('NMAP: entrato WATCH-NSC')
-      map.scale(110000)
-      pt.scale(110000)
+      scale = myScale(window.innerWidth)
+      map.scale(scale)
+      pt.scale(scale)
 
       const gWorld = d3.select(this.$refs.world)
       gWorld.call(map)

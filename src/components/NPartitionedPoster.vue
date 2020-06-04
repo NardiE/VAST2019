@@ -1,19 +1,13 @@
 <template>
-  <div>
+  <div class ="vertical-center">
     <b-container fluid class="" v-show="mode=='timeseries'">
-      <b-row  class="mt-3">
-        <b-col class cols = "12">
-          <div style="height:400px" >
-            <div>
-                <NTimeSeries :cfAggregation="tsCollection" @click-inside = "switchToMap"></NTimeSeries>
-            </div>>
-          </div>
-        </b-col>
-      </b-row>
+      <div>
+        <NTimeSeries :cfAggregation="tsCollection" @click-inside = "switchToMap"></NTimeSeries>
+      </div>>
     </b-container>
     <b-container v-if="mode=='map'">
-      <b-row class="">
-        <b-col cols = '3'>
+      <b-row class="mt-1">
+        <b-col cols = '12'>
             <b-row>
               <b-button @click="settingVisible = !settingVisible" aria-pressed="true">
                 <font-awesome-icon class="fa-x" icon="sliders-h" style="color:'white'" />
@@ -32,14 +26,10 @@
               </b-button-group>
             </b-row>
           </b-col>
-      </b-row>
-      <b-row class="">
-        <b-col>
+        <b-col cols="12">
           <NTimeComponent @update-timestamp = "updateTimeStamp" :timeStamp = "timeStamp" :baseTimeStamp = "baseTimeStamp" 
           :endTimeStamp = "endTimeStamp" :increment=increment></NTimeComponent>
         </b-col>
-      </b-row>
-      <b-row class="">
         <b-col>
           <div style="height: 400px">
             <NMap @hover-sensor="hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
@@ -49,27 +39,23 @@
             ></NMap>
           </div>
         </b-col>
-        <b-col cols="5" v-if="selectedSensorPoint.properties.SensorId == ''">
-          <b-row  class="ml-0" style="margin-top:10px">
+        <b-col class="order-lg-2 mb-3" cols = "12">
+           <NPlot :cfAggregation="barCollection" @click-sensor="clickSensor" @hover-sensor="hoverSensor"></NPlot>
+        </b-col>
+        <b-col cols="12" lg="5" v-if="selectedSensorPoint.properties.SensorId == ''">
+          <b-row style="height:100%" class="my-auto">
             <NCounters :pointNumber=pointNumber :totalRadiation=totalRadiation :avgTotalRadiation=avgTotalRadiation :avgStaticRadiation=avgStaticRadiation
             :avgMobileRadiation=avgMobileRadiation :mobileSensorNumber=mobileSensorNumber :staticSensorNumber=staticSensorNumber :mobileTotalRadiation=mobileTotalRadiation
             :staticTotalRadiation=staticTotalRadiation
             ></NCounters>
           </b-row>
         </b-col>
-        <b-col cols="3" v-if="selectedSensorPoint.properties.SensorId != ''">
-          <b-row style="margin-top:10px">
+        <b-col cols="12" lg="5" v-if="selectedSensorPoint.properties.SensorId != ''">
+          <b-row style="height:100%" class="my-auto">
             <NInformation :sensorCode="selectedSensorPoint.properties.SensorId" :userName="selectedSensorPoint.properties.UserId" 
             :latitude ="selectedSensorPoint.geometry.coordinates[0]" :longitude="selectedSensorPoint.geometry.coordinates[1]" :sensorType ="selectedSensorPoint.properties.SensorType" 
             :timeStamp ="selectedSensorPoint.properties.Timestamp" :radiation ="Number(Number(selectedSensorPoint.properties.Radiation).toFixed(2))"></NInformation>
           </b-row>
-        </b-col>
-      </b-row>
-      <b-row  class="mt-3">
-        <b-col class cols = "12">
-          <div style="height:100px">
-           <NPlot :cfAggregation="barCollection" @click-sensor="clickSensor" @hover-sensor="hoverSensor"></NPlot>
-          </div>
         </b-col>
       </b-row>
     </b-container>
@@ -558,16 +544,10 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  margin-top: 40px;
-  padding-top: 10px;
-  margin-bottom:20px;
-}
+.vertical-center {
+  min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
 
-
-.container-fluid {
-  margin-top: 40px;
-  padding-top: 10px;
-  margin-bottom:20px;
+  display: flex;
+  align-items: center;
 }
 </style>

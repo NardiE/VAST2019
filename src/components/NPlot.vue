@@ -1,5 +1,5 @@
 <template>
-  <vue-plotly @click="click" @hover="hover" @unhover="unhover" style="overflow:auto;" :data="data" :layout="layout" :options="options"/>
+  <vue-plotly @click="click" @hover="hover" @unhover="unhover" :autoResize="true" :data="data" :layout="layout" :options="options"/>
 </template>
 
 <script>
@@ -39,7 +39,8 @@ export default {
       }],
       layout: {
          color: 'white',
-         height: 250,
+         height: 220,
+         autosize: true,
          margin: {
             t: 6,
             l: 6,
@@ -72,7 +73,7 @@ export default {
       options: {
         displayModeBar: false,
         showSendToCloud:true,
-        
+        responsive: true,
         scrollZoom: false
       },
     };

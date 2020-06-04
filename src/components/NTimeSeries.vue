@@ -1,5 +1,5 @@
 <template>
-  <vue-plotly @click="click" style="overflow:auto;" :data="data" :layout="layout" :options="options"/>
+  <vue-plotly :relayout="relayout" @click="click" :autoResize="true" :data="data" :layout="layout" :options="options"/>
 </template>
 
 <script>
@@ -19,7 +19,8 @@ export default {
       }
       ],
       layout: {
-        height: 400,
+        //width: 0.9 * window.innerWidth,
+        height: 0.9 * window.innerHeight,
         autosize: true,
         showlegend: false,
         color: 'white',
@@ -56,9 +57,7 @@ export default {
         showSendToCloud:true,
         
         scrollZoom: false,
-        
-        // responsive: true
-        //
+        responsive: true
       },
       config: {
       },
@@ -74,6 +73,9 @@ export default {
     }
   },
   methods: {
+    relayout(){
+      console.log("NULLA")
+    },
     click(data){
       var timestamp = data.points.map(function(d){
         if(d.x.length == 10) return (d.x + ' 00:00:00');

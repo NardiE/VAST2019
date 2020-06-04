@@ -129,4 +129,10 @@ p{
   margin-bottom: 4px;
   font-size: 17px !important;
 }
+.card-deck{
+  margin-bottom: auto;
+  margin-top: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
 </style>

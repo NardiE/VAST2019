@@ -19,7 +19,7 @@ export default {
       }
       ],
       layout: {
-        //width: 0.9 * window.innerWidth,
+        //width: 0.98 * window.innerWidth,
         height: 0.9 * window.innerHeight,
         autosize: true,
         showlegend: false,
@@ -61,7 +61,7 @@ export default {
       },
       config: {
       },
-      verbose: true
+      verbose: false
     };
   },
   mounted () {
@@ -74,7 +74,7 @@ export default {
   },
   methods: {
     relayout(){
-      console.log("NULLA")
+      console.log("")
     },
     click(data){
       var timestamp = data.points.map(function(d){

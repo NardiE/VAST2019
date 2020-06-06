@@ -18,9 +18,6 @@ var myScale = d3.scaleLinear()
 
 var scale = myScale(window.innerWidth)
 
-console.log('SCALA: ' + scale)
-console.log('WIDTH: ' + window.innerWidth)
-
 // MAP + FEATURE LAYER
 const map = MapWithLayers()
   .scale(scale)
@@ -94,7 +91,7 @@ export default {
       
       var selector = idSensor == '' ? 'path#FAKEID' : 'path#' + idSensor
       var el = d3.select(selector)
-      if (!el.empty()){
+      if ( el && !el.empty()){
         if(this.verbose) console.log('NMAP - Marco il sensore: ' + idSensor + ' da ' + el.attr('class') +' a ' + (el.attr('class').trim() + ' ').replace('  ',' ') + clas)
       // prendo classi preesistenti e aggiungo la mia
         var classes = (el.attr('class').trim() + ' ').replace('  ',' ') + clas
@@ -117,12 +114,15 @@ export default {
       var selector = clas == '' ? 'path#FAKEID' : 'path.' + clas
       var el = d3.selectAll(selector)
       var classes = ''
-      if (!el.empty()){
-        el.forEach((d) => {
-          classes = d.attr('class').trim().replace(clas, '').trim()
-          d.attr('class', classes)
-        })
-        
+      try { 
+        if (!el.empty()){
+          el.forEach((d) => {
+            classes = d.attr('class').trim().replace(clas, '').trim()
+            d.attr('class', classes)
+          })
+        }
+      }
+      finally{
         this.restoreOnClick()
       }
     },
@@ -217,7 +217,6 @@ export default {
     },
     // // THIS IS THE RESPONSABLE TO RESTORE MAP SCALE
     ResizeMap(){
-      console.log("CULOOOOOOOOOOOOOOOOOOOOOOOO")
       scale = myScale(window.innerWidth)
       map.scale(scale)
       pt.scale(scale)

@@ -1,9 +1,19 @@
 <template>
   <div class ="vertical-center">
+    <b-container fluid class="" v-show="mode==null">
+      <img class="img-fluid w-100" :src="this.landingImage" />
+    </b-container>
     <b-container fluid class="" v-show="mode=='timeseries'">
+      <b-row class="ml-0">
+        <b-button-group>
+          <b-button @click="refreshTimeSeries('static')">STATIC SENSORS</b-button>
+          <b-button @click="refreshTimeSeries('mobile')">MOBILE SENSORS</b-button>
+          <b-button @click="refreshTimeSeries(null)">ALL SENSORS</b-button>
+        </b-button-group>
+      </b-row>
       <div>
         <NTimeSeries :cfAggregation="tsCollection" @click-inside = "switchToMap"></NTimeSeries>
-      </div>>
+      </div>
     </b-container>
     <b-container v-if="mode=='map'">
       <b-row class="mt-1">
@@ -81,6 +91,7 @@ let cf // crossfilter instance
 
 // eslint-disable-next-line
 let dTimeStamp
+let dSensorType
 
 // let cf2 // crossfilter instance
 
@@ -88,6 +99,9 @@ let dTimeStamp
 var numerics = ['Latitude', 'Longitude', 'Radiation']
 
 var modes = ['timeseries', 'map'];
+
+var landingImages = ['landing-1.jpg','landing-2.jpg','landing-3.jpg','landing-4.jpg','landing-5.jpg','landing-6.jpg','landing-7.jpg','landing-8.jpg','landing-9.jpg','landing-10.jpg'
+,'landing-11.jpg']
 
 export default {
   name: 'NPartitionedPoster',
@@ -101,6 +115,8 @@ export default {
   },
   data () {
     return {
+      // LANDING IMAGE
+      landingImage:landingImages[0],
 
       // SETTINGS
       increment: 3600,
@@ -165,7 +181,7 @@ export default {
       // FIXME DEVELOPEMENT PURPOSES
       enableLoading: true,
       featureNumbers: Infinity,
-      verbose: true,
+      verbose: false,
 
       // COLLECTIONS
       pointCollection: {
@@ -254,11 +270,11 @@ export default {
         this.pointCollection = this.getGeoJsonFromReports(cfDimension.top(this.featureNumbers))
       }
     },
-    refreshTimeSeries(cfDimension){
-      cfDimension.filter(null)
+    refreshTimeSeries(filter){
+      dTimeStamp.filter(null)
+      dSensorType.filter(filter)
       if(this.verbose) console.log('NPP - I refresh the TimeSeries')
-      this.tsCollection = this.getTsFromReport(cfDimension.top(this.featureNumbers))
-      console.log(this.tsCollection)
+      this.tsCollection = this.getTsFromReport(dTimeStamp.top(this.featureNumbers))
     },
 
     // COLLECTION STANDARIZATION FUNCTIONS
@@ -428,25 +444,22 @@ export default {
     /* TIMESERIES COMPONENT (TIMESERIES) */
     switchToMap (...args) {
       const[timeStamp,sensor] = args
-      console.log(sensor)
-      if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + sensor.Timestamp + ' for Sensor: ' + sensor.SensorId)}
-      if(sensor){
+      if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + timeStamp[0] + ' for Sensor: ' + sensor.SensorId)}
+      if(sensor && timeStamp[0]){
         // use to DEEP COPY
         var tmpSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
         
         tmpSensorPoint.properties.SensorId = sensor.SensorId
         tmpSensorPoint.properties.UserId = sensor.UserId
         tmpSensorPoint.properties.SensorType = sensor.SensorType
-        tmpSensorPoint.properties.Timestamp = sensor.Timestamp
+        tmpSensorPoint.properties.Timestamp = timeStamp[0]
         tmpSensorPoint.properties.Units = sensor.Units
         tmpSensorPoint.properties.Radiation = sensor.Radiation
         var coordinates = [sensor.Latitude,sensor.Longitude]
         tmpSensorPoint.geometry.coordinates = [...coordinates]
 
         this.selectedSensorPoint = JSON.parse(JSON.stringify(tmpSensorPoint))
-      }
-      if(timeStamp){
-        if(this.verbose) console.log('NPP: entrato STM (timestamp) ' + timeStamp[0])
+
         this.timeStamp = timeStamp[0]
         this.mode = modes[1]
       }
@@ -498,15 +511,22 @@ export default {
       // CROSS FILTER SETUP
       cf = crossfilter(data)
       dTimeStamp = cf.dimension(function (d) { return d['Timestamp'] })
+      dSensorType = cf.dimension(function (d) { return d['SensorType'] })
       // REFRESHING COMPONENT
       if(this.verbose) console.log('NPP: Aggiorno i componenti')
       this.refreshMap(dTimeStamp, null)
       this.refreshBarChart (dTimeStamp)
       this.refreshCounters()
-      this.refreshTimeSeries(dTimeStamp)
+      
+      this.mode = null;
       
       if(this.verbose) console.log('NPP-MOUNTED: Aggiungo modalità visualizzazione una volta finito il caricamento')
-      this.mode = modes[0]
+      landingImages.forEach((d,i) => {
+        if(i > 0)
+          setTimeout(() => { this.landingImage = d }, i * 10000);
+      })
+      
+      setTimeout(() => { this.mode = modes[0]; this.refreshTimeSeries(null);}, (landingImages.length -1) * 10000);
     }
   },
 

@@ -45,7 +45,7 @@ export default {
   data () {
     return {
       // DEVELOPMENT
-      verbose: true,
+      verbose: false,
 
       // PROPERTIES
       isPlaying: false,

@@ -87,6 +87,8 @@ import axios from 'axios';
 import crossfilter from 'crossfilter'
 import * as d3 from 'd3'
 
+var landingTime = 10000;
+
 let cf // crossfilter instance
 
 // eslint-disable-next-line
@@ -399,9 +401,6 @@ export default {
     },
     clickSensor(...args){
       const[snsCode,sensor] = args
-      console.log('PORCO DIO')
-      console.log(snsCode)
-      console.log(sensor[0])
       if(this.verbose) console.log('NPP - The Plot Component trigger a Click on: ' + snsCode)
       if(snsCode){
         var sensCode = snsCode[0]
@@ -443,18 +442,17 @@ export default {
     },
     /* TIMESERIES COMPONENT (TIMESERIES) */
     switchToMap (...args) {
-      const[timeStamp,sensor] = args
+      const[timeStamp, radiation, sensor] = args
       if(this.verbose){ console.log('NPP - Passing to Map Visualization with Date: ' + timeStamp[0] + ' for Sensor: ' + sensor.SensorId)}
-      if(sensor && timeStamp[0]){
+      if(sensor && timeStamp[0] && radiation[0]){
         // use to DEEP COPY
         var tmpSensorPoint = JSON.parse(JSON.stringify(this.selectedSensorPoint))
-        
         tmpSensorPoint.properties.SensorId = sensor.SensorId
         tmpSensorPoint.properties.UserId = sensor.UserId
         tmpSensorPoint.properties.SensorType = sensor.SensorType
         tmpSensorPoint.properties.Timestamp = timeStamp[0]
         tmpSensorPoint.properties.Units = sensor.Units
-        tmpSensorPoint.properties.Radiation = sensor.Radiation
+        tmpSensorPoint.properties.Radiation = radiation[0]
         var coordinates = [sensor.Latitude,sensor.Longitude]
         tmpSensorPoint.geometry.coordinates = [...coordinates]
 
@@ -523,10 +521,10 @@ export default {
       if(this.verbose) console.log('NPP-MOUNTED: Aggiungo modalità visualizzazione una volta finito il caricamento')
       landingImages.forEach((d,i) => {
         if(i > 0)
-          setTimeout(() => { this.landingImage = d }, i * 10000);
+          setTimeout(() => { this.landingImage = d }, i * landingTime);
       })
       
-      setTimeout(() => { this.mode = modes[0]; this.refreshTimeSeries(null);}, (landingImages.length -1) * 10000);
+      setTimeout(() => { this.mode = modes[0]; this.refreshTimeSeries(null);}, (landingImages.length - 1) * landingTime);
     }
   },
 

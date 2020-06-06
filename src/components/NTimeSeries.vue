@@ -81,10 +81,13 @@ export default {
         if(d.x.length == 10) return (d.x + ' 00:00:00');
         else return (d.x + ':00');
       })
+      var radiation = data.points.map(function(d){
+        return (d.y);
+      })
       var sensor = data.points.map(function(d){
         return (d.data.node);
       })
-      this.$emit('click-inside',timestamp, sensor[0])
+      this.$emit('click-inside',timestamp, radiation, sensor[0])
     },
     refreshTimeSeries(newVal) {
       var i = 0

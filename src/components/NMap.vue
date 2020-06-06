@@ -115,7 +115,7 @@ export default {
       var el = d3.selectAll(selector)
       var classes = ''
       try { 
-        if (!el.empty()){
+        if (el && !el.empty()){
           el.forEach((d) => {
             classes = d.attr('class').trim().replace(clas, '').trim()
             d.attr('class', classes)
@@ -354,7 +354,7 @@ export default {
         }
       }
 
-      this.setUpSensors()
+      this.restoreOnClick()
     }
   }
 }

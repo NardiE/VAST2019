@@ -42,7 +42,7 @@
         </b-col>
         <b-col>
           <div style="height: 400px">
-            <NMap @hover-sensor="hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
+            <NMap @hover-sensor = "hoverSensorMap" @add-neighbor = "addNeighbor" @remove-neighbor = "removeNeighbor" @remove-neighbors = "removeNeighbors" 
             @add-father = "addFather" @remove-father = "removeFather"
             :featureCollection="pointCollection" :selectedSensorCode="selectedSensorPoint.properties.SensorId" :neighborhoodSensorCodes=neighborhoodSensorCodes
             :hoveredSensorCode="hoveredSensorCode"
